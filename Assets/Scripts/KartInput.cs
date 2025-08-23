@@ -12,17 +12,16 @@ public class KartInput : MonoBehaviour
     [Header("Kart Components")]
     public Transform leftFrontWheel;
     public Transform rightFrontWheel;
-    public Transform kartParent;
+    public Transform leftBackWheel;
+    public Transform rightBackWheel;
     public KartData kartData;
-    public Transform steeringWheel;
     public Rigidbody kartRigidbody;
 
-    [Header("Smoothing Settings")]
-    public float groundSmoothingStrength = 7.5f;
-    public float velocitySmoothing = 20f;
-    private float currentSpeed = 0f;
     private float steerInput = 0f;
     private float currentSteerAngle = 0f;
+    private float currentSpeed = 0f;
+    private RaycastHit groundHit;
+    private RaycastHit lookaheadHit;
     private bool touchingGround = false;
 
     [Header ("Events")]
@@ -31,10 +30,6 @@ public class KartInput : MonoBehaviour
     public UnityEvent onBrake;
     public UnityEvent onSteer;
 
-    private float targetAngle = 0f;
-    private float realSpeed = 0f;
-    private float steerAmount = 0f;
-
     public void Awake()
     {
         steerAction.performed += OnSteer;
@@ -42,6 +37,8 @@ public class KartInput : MonoBehaviour
         accelerateAction.performed += OnAccelerate;
         accelerateAction.canceled += OnAccelerateCanceled;
         brakeAction.performed += OnBrake;
+
+        kartRigidbody.isKinematic = true;
     }
 
     private void OnBrake(InputAction.CallbackContext context)
@@ -71,96 +68,95 @@ public class KartInput : MonoBehaviour
 
     void FixedUpdate()
     {
-        HandleWheelVisuals();
-        HandleMovement();
-        HandleSteering();
-        HandleGroundNormalRotation();
-    }
+        touchingGround = Physics.Raycast(transform.position, -transform.up, out groundHit, kartData.groundCheckDistance, kartData.groundLayer);
 
-    private void HandleWheelVisuals()
-    {
-        targetAngle = steerInput * kartData.maxSteerAngle;
-        currentSteerAngle = Mathf.MoveTowards(currentSteerAngle, targetAngle, kartData.steerSpeed * Time.fixedDeltaTime * kartData.maxSteerAngle);
-        currentSteerAngle = Mathf.Clamp(currentSteerAngle, kartData.minSteerAngle, kartData.maxSteerAngle);
+        if (touchingGround)
+        {
+            if (!kartRigidbody.isKinematic)
+            {
+                kartRigidbody.isKinematic = true;
+                currentSpeed = kartRigidbody.linearVelocity.magnitude;
+                kartRigidbody.linearVelocity = Vector3.zero;
+                kartRigidbody.angularVelocity = Vector3.zero;
+            }
+
+            HandleMovement();
+            HandleSteering();
+            HandleGroundAlignment();
+        }
+        else
+        {
+            if (kartRigidbody.isKinematic)
+            {
+                kartRigidbody.isKinematic = false;
+                kartRigidbody.linearVelocity = transform.forward * currentSpeed;
+                currentSpeed = 0f;
+            }
+        }
         
-        leftFrontWheel.localEulerAngles = new Vector3(0, 0, currentSteerAngle);
-        rightFrontWheel.localEulerAngles = new Vector3(0, 0, currentSteerAngle);
+        HandleWheelVisuals();
     }
 
     private void HandleMovement()
     {
-        realSpeed = transform.InverseTransformDirection(kartRigidbody.linearVelocity).z;
-
-        if (brakeAction != null && brakeAction.IsPressed())
+        if (accelerateAction.IsPressed())
         {
-            if (currentSpeed > 0f)
+            currentSpeed = Mathf.Lerp(currentSpeed, kartData.maxSpeed, kartData.acceleration * Time.fixedDeltaTime);
+        }
+        else if (brakeAction.IsPressed())
+        {
+            if (currentSpeed > 0.1f)
             {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, kartData.brakeSpeed * Time.fixedDeltaTime);
+                currentSpeed = Mathf.Lerp(currentSpeed, 0, kartData.brakeForce * Time.fixedDeltaTime);
             }
             else
             {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, -kartData.maxSpeed, kartData.accelerateSpeed * Time.fixedDeltaTime);
+                currentSpeed = Mathf.Lerp(currentSpeed, -kartData.maxReverseSpeed, kartData.reverseAcceleration * Time.fixedDeltaTime);
             }
-        }
-        else if (accelerateAction.IsPressed())
-        {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, kartData.maxSpeed, kartData.accelerateSpeed * Time.fixedDeltaTime);
-            currentSpeed = Mathf.Min(currentSpeed, kartData.maxSpeed);
         }
         else
         {
-            if (currentSpeed > 0f)
-            {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, kartData.decelerateSpeed * Time.fixedDeltaTime);
-                if (currentSpeed < 0.01f) currentSpeed = 0f;
-            }
-            else if (currentSpeed < 0f)
-            {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, kartData.decelerateSpeed * Time.fixedDeltaTime);
-                if (currentSpeed > -0.01f) currentSpeed = 0f;
-            }
+            currentSpeed = Mathf.Lerp(currentSpeed, 0, kartData.deceleration * Time.fixedDeltaTime);
         }
 
-        Vector3 targetVelocity = transform.forward * currentSpeed;
-        targetVelocity.y = kartRigidbody.linearVelocity.y;
+        Vector3 moveDirection = transform.forward * currentSpeed;
+
+        if (Physics.Raycast(transform.position, transform.forward, out lookaheadHit, 1f, kartData.groundLayer))
+        {
+            if (Vector3.Angle(Vector3.up, lookaheadHit.normal) > 1f)
+            {
+                moveDirection = Vector3.ProjectOnPlane(moveDirection, lookaheadHit.normal);
+                if (Vector3.Angle(Vector3.up, lookaheadHit.normal) > 60f)
+                {
+                    touchingGround = false;
+                }
+            }
+            else
+            {
+                currentSpeed = 0;
+            }
+        }
         
-        Vector3 smoothedVelocity = Vector3.Lerp(kartRigidbody.linearVelocity, targetVelocity, Time.fixedDeltaTime * velocitySmoothing);
-        smoothedVelocity.y = kartRigidbody.linearVelocity.y;
-        
-        kartRigidbody.linearVelocity = smoothedVelocity;
+        transform.position += moveDirection * Time.fixedDeltaTime;
     }
 
     private void HandleSteering()
     {
-        realSpeed = transform.InverseTransformDirection(kartRigidbody.linearVelocity).z;
-        steerAmount = realSpeed / 1.5f * steerInput * kartData.turnRadius;
-
-        if (Mathf.Abs(realSpeed) > 0.5f && Mathf.Abs(steerInput) > 0.01f)
+        if (Mathf.Abs(currentSpeed) > 0.1f)
         {
-            Vector3 steerDirection = new Vector3(
-                transform.eulerAngles.x, 
-                transform.eulerAngles.y + steerAmount, 
-                transform.eulerAngles.z
-            );
-            transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, steerDirection, 3f * Time.fixedDeltaTime);
+            float turnAmount = steerInput * kartData.turnSpeed * Time.fixedDeltaTime;
+            transform.Rotate(0, turnAmount, 0);
         }
     }
 
-    private void HandleGroundNormalRotation()
+    private void HandleGroundAlignment()
     {
-        RaycastHit hit;
-        bool hitGround = Physics.Raycast(transform.position, -transform.up, out hit, 0.75f);
-        
-        if (hitGround)
-        {
-            
-            transform.rotation = Quaternion.Lerp(
-                transform.rotation, 
-                Quaternion.FromToRotation(transform.up * 2, hit.normal) * transform.rotation, 
-                groundSmoothingStrength * Time.fixedDeltaTime
-            );
-            touchingGround = true;
+        float angle = Vector3.Angle(Vector3.up, groundHit.normal);
 
+        if (angle < 60f)
+        {
+            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, groundHit.normal) * transform.rotation;
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * kartData.groundAlignmentSpeed);
         }
         else
         {
@@ -168,17 +164,29 @@ public class KartInput : MonoBehaviour
         }
     }
 
+    private void HandleWheelVisuals()
+    {
+        currentSteerAngle = steerInput * kartData.maxSteerAngle;
+        leftFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
+        rightFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
+        
+        float wheelRotationSpeed = currentSpeed * 360f / (2f * Mathf.PI * kartData.wheelRadius);
+        
+        leftFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
+        rightFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
+        leftBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
+        rightBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
+    }
+
     public void OnEnable()
     {
         steerAction.Enable();
         accelerateAction.Enable();
-        brakeAction.Enable();
     }
 
     public void OnDisable()
     {
         steerAction.Disable();
         accelerateAction.Disable();
-        brakeAction.Disable();
     }
 }
