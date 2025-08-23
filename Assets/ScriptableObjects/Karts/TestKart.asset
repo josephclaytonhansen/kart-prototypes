@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f681a2a83f6c5349abea3bf39fa2b71, type: 3}
+  m_Name: TestKart
+  m_EditorClassIdentifier: Assembly-CSharp::Kart
+  maxSteerAngle: 30
+  minSteerAngle: -30
+  steerSpeed: 1
+  turnRadius: 2
+  accelerateSpeed: 5
+  decelerateSpeed: 15
+  brakeSpeed: 30
+  maxSpeed: 14
+  weight: 1000
+  offRoadMultiplier: 1
