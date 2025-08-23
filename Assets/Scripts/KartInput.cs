@@ -24,6 +24,10 @@ public class KartInput : MonoBehaviour
     private RaycastHit lookaheadHit;
     private bool touchingGround = false;
 
+    // These variables will store the target values calculated in FixedUpdate.
+    private Vector3 targetPosition;
+    private Quaternion targetRotation;
+
     [Header ("Events")]
     public UnityEvent onAccelerate;
     public UnityEvent onDecelerate;
@@ -39,6 +43,10 @@ public class KartInput : MonoBehaviour
         brakeAction.performed += OnBrake;
 
         kartRigidbody.isKinematic = true;
+        
+        // Initialize the targets to the current transform.
+        targetPosition = transform.position;
+        targetRotation = transform.rotation;
     }
 
     private void OnBrake(InputAction.CallbackContext context)
@@ -68,7 +76,7 @@ public class KartInput : MonoBehaviour
 
     void FixedUpdate()
     {
-        touchingGround = Physics.Raycast(transform.position, -transform.up, out groundHit, kartData.groundCheckDistance, kartData.groundLayer);
+        touchingGround = Physics.Raycast(targetPosition, -transform.up, out groundHit, kartData.groundCheckDistance, kartData.groundLayer);
 
         if (touchingGround)
         {
@@ -96,6 +104,15 @@ public class KartInput : MonoBehaviour
         
         HandleWheelVisuals();
     }
+    
+    void Update()
+    {
+        if (kartRigidbody.isKinematic)
+        {
+            transform.position = Vector3.Lerp(transform.position, targetPosition, 25f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 25f * Time.deltaTime);
+        }
+    }
 
     private void HandleMovement()
     {
@@ -107,7 +124,7 @@ public class KartInput : MonoBehaviour
         {
             if (currentSpeed > 0.1f)
             {
-                currentSpeed = Mathf.Lerp(currentSpeed, 0, kartData.brakeForce * Time.fixedDeltaTime);
+                currentSpeed = Mathf.Max(currentSpeed - kartData.brakeForce * Time.fixedDeltaTime, 0f);
             }
             else
             {
@@ -119,9 +136,20 @@ public class KartInput : MonoBehaviour
             currentSpeed = Mathf.Lerp(currentSpeed, 0, kartData.deceleration * Time.fixedDeltaTime);
         }
 
-        Vector3 moveDirection = transform.forward * currentSpeed;
+        Vector3 moveDirection = (targetRotation * Vector3.forward) * currentSpeed;
 
-        if (Physics.Raycast(transform.position, transform.forward, out lookaheadHit, 1f, kartData.groundLayer))
+        bool lookaheadHitFound = false;
+        
+        if (currentSpeed > 0.1f)
+        {
+            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.forward, out lookaheadHit, 1f, kartData.groundLayer);
+        }
+        else if (currentSpeed < -0.1f)
+        {
+            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.back, out lookaheadHit, 1f, kartData.groundLayer);
+        }
+
+        if (lookaheadHitFound)
         {
             if (Vector3.Angle(Vector3.up, lookaheadHit.normal) > 1f)
             {
@@ -137,7 +165,7 @@ public class KartInput : MonoBehaviour
             }
         }
         
-        transform.position += moveDirection * Time.fixedDeltaTime;
+        targetPosition += moveDirection * Time.fixedDeltaTime;
     }
 
     private void HandleSteering()
@@ -145,7 +173,7 @@ public class KartInput : MonoBehaviour
         if (Mathf.Abs(currentSpeed) > 0.1f)
         {
             float turnAmount = steerInput * kartData.turnSpeed * Time.fixedDeltaTime;
-            transform.Rotate(0, turnAmount, 0);
+            targetRotation *= Quaternion.Euler(0, turnAmount, 0);
         }
     }
 
@@ -155,8 +183,7 @@ public class KartInput : MonoBehaviour
 
         if (angle < 60f)
         {
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, groundHit.normal) * transform.rotation;
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * kartData.groundAlignmentSpeed);
+            targetRotation = Quaternion.FromToRotation(targetRotation * Vector3.up, groundHit.normal) * targetRotation;
         }
         else
         {
@@ -182,11 +209,13 @@ public class KartInput : MonoBehaviour
     {
         steerAction.Enable();
         accelerateAction.Enable();
+        brakeAction.Enable();
     }
 
     public void OnDisable()
     {
         steerAction.Disable();
         accelerateAction.Disable();
+        brakeAction.Disable();
     }
 }
