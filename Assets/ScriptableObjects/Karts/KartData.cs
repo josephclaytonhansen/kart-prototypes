@@ -1,27 +1,25 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "KartData", menuName = "Kart/KartData", order = 1)]
+[CreateAssetMenu(fileName = "New KartData", menuName = "Kart/Kart Data")]
 public class KartData : ScriptableObject
 {
-    [Header("Movement")]
+    [Header("Movement Stats")]
+    public float maxSpeed = 10f;
     public float acceleration = 25f;
-    public float deceleration = 15f;
-    public float brakeForce = 30f;
-    public float reverseAcceleration = 15f;
-    public float maxSpeed = 35f;
-    public float maxReverseSpeed = 15f;
-    public float gravity = 20f;
-
-    [Header("Steering")]
-    public float turnSpeed = 150f;
-    public float maxSteerAngle = 45f;
-    public float steeringWheelMaxRotation = 360f;
-
-    [Header("Physics")]
-    public float groundAlignmentSpeed = 10f;
-    public float groundCheckDistance = 1.2f;
+    public float deceleration = 10f;
+    public float brakeForce = 20f;
+    public float maxReverseSpeed = 5f;
+    public float reverseAcceleration = 10f; // <-- This was the missing variable
+    public float turnSpeed = 100f;
+    
+    [Header("Airborne & Collision")]
+    public float groundCheckDistance = 1f;
     public LayerMask groundLayer;
+    public float bounceStrength = 20f;
+    public float jumpForce = 5f;
+    [Range(0, 2f)] public float airborneSpeedFactor = 1.0f;
 
-    [Header("Visuals")]
-    public float wheelRadius = 0.5f;
+    [Header("Wheel Stats")]
+    public float maxSteerAngle = 30f;
+    public float wheelRadius = 0.3f;
 }

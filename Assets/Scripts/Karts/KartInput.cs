@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
+using System.Collections.Generic;
 
 public class KartInput : MonoBehaviour
 {
@@ -20,14 +21,19 @@ public class KartInput : MonoBehaviour
     private float steerInput = 0f;
     private float currentSteerAngle = 0f;
     private float currentSpeed = 0f;
-    private RaycastHit groundHit;
+    
     private RaycastHit lookaheadHit;
-    private bool touchingGround = false;
+    
+    private bool isGrounded = false;
+    private bool wasGrounded = false;
+    private bool isBouncing = false;
+    private float groundedTime = 0f;
 
-    // These variables will store the target values calculated in FixedUpdate.
     private Vector3 targetPosition;
     private Quaternion targetRotation;
 
+    private List<RaycastHit> groundHits = new List<RaycastHit>();
+    
     [Header ("Events")]
     public UnityEvent onAccelerate;
     public UnityEvent onDecelerate;
@@ -44,7 +50,6 @@ public class KartInput : MonoBehaviour
 
         kartRigidbody.isKinematic = true;
         
-        // Initialize the targets to the current transform.
         targetPosition = transform.position;
         targetRotation = transform.rotation;
     }
@@ -76,35 +81,88 @@ public class KartInput : MonoBehaviour
 
     void FixedUpdate()
     {
-        touchingGround = Physics.Raycast(targetPosition, -transform.up, out groundHit, kartData.groundCheckDistance, kartData.groundLayer);
+        wasGrounded = isGrounded;
+        bool rawGrounded = CheckGround();
 
-        if (touchingGround)
+        if (rawGrounded)
         {
-            if (!kartRigidbody.isKinematic)
-            {
-                kartRigidbody.isKinematic = true;
-                currentSpeed = kartRigidbody.linearVelocity.magnitude;
-                kartRigidbody.linearVelocity = Vector3.zero;
-                kartRigidbody.angularVelocity = Vector3.zero;
-            }
-
-            HandleMovement();
-            HandleSteering();
-            HandleGroundAlignment();
+            groundedTime += Time.fixedDeltaTime;
         }
         else
         {
-            if (kartRigidbody.isKinematic)
+            groundedTime = 0;
+        }
+
+        isGrounded = groundedTime > 0.05f;
+
+        // State Machine Logic
+        // Transition from Airborne to Grounded
+        if (!wasGrounded && isGrounded)
+        {
+            kartRigidbody.isKinematic = true;
+            currentSpeed = kartRigidbody.linearVelocity.magnitude;
+            kartRigidbody.Sleep();
+            targetPosition = transform.position;
+        }
+
+        // Transition from Grounded to Airborne
+        if (wasGrounded && !isGrounded)
+        {
+            kartRigidbody.isKinematic = false;
+            kartRigidbody.linearVelocity = (targetRotation * Vector3.forward) * currentSpeed + Vector3.up * kartData.jumpForce;
+        }
+
+        // Main logic for grounded state
+        if (isGrounded)
+        {
+            HandleMovement();
+            HandleSteering();
+            
+            if (!isBouncing)
             {
-                kartRigidbody.isKinematic = false;
-                kartRigidbody.linearVelocity = transform.forward * currentSpeed;
-                currentSpeed = 0f;
+                HandleGroundAlignment();
             }
+        }
+        else // Main logic for airborne state
+        {
+            // Apply continuous forward force only on the horizontal plane
+            Vector3 horizontalForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            kartRigidbody.AddForce(horizontalForward * currentSpeed * kartData.airborneSpeedFactor, ForceMode.Acceleration);
         }
         
         HandleWheelVisuals();
     }
     
+    private bool CheckGround()
+    {
+        RaycastHit hit;
+        groundHits.Clear();
+        int groundedCount = 0;
+
+        if (Physics.Raycast(leftFrontWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        {
+            groundedCount++;
+            groundHits.Add(hit);
+        }
+        if (Physics.Raycast(rightFrontWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        {
+            groundedCount++;
+            groundHits.Add(hit);
+        }
+        if (Physics.Raycast(leftBackWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        {
+            groundedCount++;
+            groundHits.Add(hit);
+        }
+        if (Physics.Raycast(rightBackWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        {
+            groundedCount++;
+            groundHits.Add(hit);
+        }
+
+        return groundedCount >= 3;
+    }
+
     void Update()
     {
         if (kartRigidbody.isKinematic)
@@ -116,6 +174,8 @@ public class KartInput : MonoBehaviour
 
     private void HandleMovement()
     {
+        isBouncing = false;
+        
         if (accelerateAction.IsPressed())
         {
             currentSpeed = Mathf.Lerp(currentSpeed, kartData.maxSpeed, kartData.acceleration * Time.fixedDeltaTime);
@@ -137,35 +197,44 @@ public class KartInput : MonoBehaviour
         }
 
         Vector3 moveDirection = (targetRotation * Vector3.forward) * currentSpeed;
+        Vector3 newTargetPosition = targetPosition + moveDirection * Time.fixedDeltaTime;
 
         bool lookaheadHitFound = false;
         
         if (currentSpeed > 0.1f)
         {
-            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.forward, out lookaheadHit, 1f, kartData.groundLayer);
+            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.forward, out lookaheadHit, Vector3.Distance(targetPosition, newTargetPosition), kartData.groundLayer);
         }
         else if (currentSpeed < -0.1f)
         {
-            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.back, out lookaheadHit, 1f, kartData.groundLayer);
+            lookaheadHitFound = Physics.Raycast(targetPosition, targetRotation * Vector3.back, out lookaheadHit, Vector3.Distance(targetPosition, newTargetPosition), kartData.groundLayer);
         }
 
         if (lookaheadHitFound)
         {
-            if (Vector3.Angle(Vector3.up, lookaheadHit.normal) > 1f)
+            float angle = Vector3.Angle(Vector3.up, lookaheadHit.normal);
+            
+            if (angle > 45f)
+            {
+                isBouncing = true;
+                
+                Vector3 incomingVector = (targetRotation * Vector3.forward).normalized;
+                Vector3 reflectionVector = Vector3.Reflect(incomingVector, lookaheadHit.normal);
+                reflectionVector.y = 0;
+                moveDirection = reflectionVector.normalized * kartData.bounceStrength;
+                
+                targetPosition = lookaheadHit.point + lookaheadHit.normal * 0.1f;
+            }
+            else if (angle > 1f)
             {
                 moveDirection = Vector3.ProjectOnPlane(moveDirection, lookaheadHit.normal);
-                if (Vector3.Angle(Vector3.up, lookaheadHit.normal) > 60f)
-                {
-                    touchingGround = false;
-                }
-            }
-            else
-            {
-                currentSpeed = 0;
+                targetPosition += moveDirection * Time.fixedDeltaTime;
             }
         }
-        
-        targetPosition += moveDirection * Time.fixedDeltaTime;
+        else
+        {
+            targetPosition += moveDirection * Time.fixedDeltaTime;
+        }
     }
 
     private void HandleSteering()
@@ -179,16 +248,14 @@ public class KartInput : MonoBehaviour
 
     private void HandleGroundAlignment()
     {
-        float angle = Vector3.Angle(Vector3.up, groundHit.normal);
+        Vector3 averagedNormal = Vector3.zero;
+        foreach (var hit in groundHits)
+        {
+            averagedNormal += hit.normal;
+        }
+        averagedNormal.Normalize();
 
-        if (angle < 60f)
-        {
-            targetRotation = Quaternion.FromToRotation(targetRotation * Vector3.up, groundHit.normal) * targetRotation;
-        }
-        else
-        {
-            touchingGround = false;
-        }
+        targetRotation = Quaternion.FromToRotation(targetRotation * Vector3.up, averagedNormal) * targetRotation;
     }
 
     private void HandleWheelVisuals()
@@ -197,7 +264,8 @@ public class KartInput : MonoBehaviour
         leftFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
         rightFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
         
-        float wheelRotationSpeed = currentSpeed * 360f / (2f * Mathf.PI * kartData.wheelRadius);
+        float wheelSpeed = isGrounded ? currentSpeed : kartRigidbody.linearVelocity.magnitude;
+        float wheelRotationSpeed = wheelSpeed * 360f / (2f * Mathf.PI * kartData.wheelRadius);
         
         leftFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
         rightFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);

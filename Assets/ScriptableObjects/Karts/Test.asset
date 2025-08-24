@@ -12,19 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f681a2a83f6c5349abea3bf39fa2b71, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::KartData
+  maxSpeed: 20
   acceleration: 25
-  deceleration: 15
-  brakeForce: 30
-  reverseAcceleration: 15
-  maxSpeed: 35
+  deceleration: 1.5
+  brakeForce: 20
   maxReverseSpeed: 15
-  gravity: 20
-  turnSpeed: 150
-  maxSteerAngle: 45
-  steeringWheelMaxRotation: 360
-  groundAlignmentSpeed: 10
+  reverseAcceleration: 15
+  turnSpeed: 50
   groundCheckDistance: 1.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+  bounceStrength: 20
+  jumpForce: 5
+  airborneSpeedFactor: 1
+  maxSteerAngle: 30
   wheelRadius: 0.5
