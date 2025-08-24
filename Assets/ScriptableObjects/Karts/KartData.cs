@@ -33,6 +33,10 @@ public class KartData : ScriptableObject
     // Higher values make the turning more responsive.
     public float turnSpeed = 50f;
 
+    [Tooltip("Steering will be this percentage of normal at max speed.")]
+    [Range(0, 1)]
+    public float steeringDampenAtMaxSpeed = 0.5f;
+
     [Header("Airborne & Collision")]
     // The distance used by the raycast to check if the kart is on the ground.
     // Adjust this based on your kart's size.
