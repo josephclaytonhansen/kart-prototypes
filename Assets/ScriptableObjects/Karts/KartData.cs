@@ -69,4 +69,33 @@ public class KartData : ScriptableObject
     // The radius of the wheels, used to calculate how fast they should rotate.
     // Must match the radius of your wheel mesh.
     public float wheelRadius = 0.5f;
+
+    [Header("Wall Collision")]
+    [Tooltip("How much speed is lost on a wall collision (1 = no loss, 0 = full stop).")]
+    [Range(0, 1)]
+    public float speedDampenOnWallCollision = 0.8f;
+    
+    [Tooltip("The strength of the smooth rotation bounce off a wall.")]
+    [Range(0, 1)]
+    public float wallBounceStrength = 0.5f;
+
+    [Header("Visual Data")]
+    public Mesh chassisMesh;
+    public Texture2D chassisTexture;
+    public Vector3 chassisLocalOffset;
+
+    public Mesh frontWheelMesh;
+    public Texture2D frontWheelTexture;
+    public Vector3 frontLeftWheelLocalOffset;
+    public Vector3 frontRightWheelLocalOffset;
+
+    public Mesh backWheelMesh;
+    public Texture2D backWheelTexture;
+    public Vector3 backLeftWheelLocalOffset;
+    public Vector3 backRightWheelLocalOffset;
+
+    public float maxChassisTiltAngle = 10f;
+    public float tiltDampening = 5f;
+    public float yJitterThreshold = 0.01f;
 }
+

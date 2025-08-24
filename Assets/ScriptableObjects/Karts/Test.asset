@@ -19,6 +19,7 @@ MonoBehaviour:
   maxReverseSpeed: 15
   reverseAcceleration: 15
   turnSpeed: 80
+  steeringDampenAtMaxSpeed: 0.5
   groundCheckDistance: 1
   groundLayer:
     serializedVersion: 2
@@ -29,3 +30,16 @@ MonoBehaviour:
   groundContactOffset: -0.35
   maxSteerAngle: 30
   wheelRadius: 0.5
+  speedDampenOnWallCollision: 0.8
+  wallBounceStrength: 0.5
+  chassisMesh: {fileID: 3596191092224140292, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
+  chassisTexture: {fileID: 0}
+  chassisLocalOffset: {x: 0, y: 0, z: 0}
+  frontWheelMesh: {fileID: 0}
+  frontWheelTexture: {fileID: 0}
+  frontLeftWheelLocalOffset: {x: 0, y: 0, z: 0}
+  frontRightWheelLocalOffset: {x: 0, y: 0, z: 0}
+  backWheelMesh: {fileID: 0}
+  backWheelTexture: {fileID: 0}
+  backLeftWheelLocalOffset: {x: 0, y: 0, z: 0}
+  backRightWheelLocalOffset: {x: 0, y: 0, z: 0}

@@ -27,9 +27,6 @@ public class KartInput : MonoBehaviour
 
     [Header("Suspension Visuals")]
     public Transform chassisVisuals;
-    public float maxChassisTiltAngle = 10.0f;
-    public float tiltDampening = 5.0f;
-    public float yJitterThreshold = 0.05f;
 
     private bool isTransitioningToGrounded = false;
     private Vector3 transitionStartPosition;
@@ -62,6 +59,7 @@ public class KartInput : MonoBehaviour
     public UnityEvent onSteer; 
     public UnityEvent onJump;
     public UnityEvent onLanding;
+    public UnityEvent onWallCollision; // New event
 
     public void Awake() 
     { 
@@ -373,11 +371,10 @@ public class KartInput : MonoBehaviour
         // Apply visual tilt to the dedicated chassis object
         if (chassisVisuals != null)
         {
-            Quaternion targetTilt = Quaternion.Euler(0, steerInput * maxChassisTiltAngle, 0);
-            chassisVisuals.localRotation = Quaternion.Slerp(chassisVisuals.localRotation, targetTilt, tiltDampening * Time.fixedDeltaTime);
+            Quaternion targetTilt = Quaternion.Euler(0, steerInput * kartData.maxChassisTiltAngle, 0);
+            chassisVisuals.localRotation = Quaternion.Slerp(chassisVisuals.localRotation, targetTilt, kartData.tiltDampening * Time.fixedDeltaTime);
         }
 
-        // Apply visual Y offset to the entire kart's visual root
         if (kartVisualsRoot != null && isGrounded)
         {
             float slopeAngle = Vector3.Angle(Vector3.up, averagedNormal); 
@@ -389,9 +386,9 @@ public class KartInput : MonoBehaviour
             } 
             
             Vector3 newLocalPos = new Vector3(0, adjustedOffset, 0);
-            if (Vector3.Distance(kartVisualsRoot.localPosition, newLocalPos) > yJitterThreshold)
+            if (Vector3.Distance(kartVisualsRoot.localPosition, newLocalPos) > kartData.yJitterThreshold)
             {
-                kartVisualsRoot.localPosition = Vector3.Lerp(kartVisualsRoot.localPosition, newLocalPos, tiltDampening * Time.fixedDeltaTime);
+                kartVisualsRoot.localPosition = Vector3.Lerp(kartVisualsRoot.localPosition, newLocalPos, kartData.tiltDampening * Time.fixedDeltaTime);
             }
         }
     }
