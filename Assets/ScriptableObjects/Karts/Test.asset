@@ -19,12 +19,13 @@ MonoBehaviour:
   maxReverseSpeed: 15
   reverseAcceleration: 15
   turnSpeed: 50
-  groundCheckDistance: 1.2
+  groundCheckDistance: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
   bounceStrength: 20
   jumpForce: 5
   airborneSpeedFactor: 1
+  groundContactOffset: -0.14
   maxSteerAngle: 30
   wheelRadius: 0.5

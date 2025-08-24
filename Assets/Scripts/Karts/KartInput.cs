@@ -17,6 +17,9 @@ public class KartInput : MonoBehaviour
     public Transform rightBackWheel;
     public KartData kartData;
     public Rigidbody kartRigidbody;
+    
+    // The new variable for the visual part of the kart
+    public Transform kartVisualsRoot;
 
     private float steerInput = 0f;
     private float currentSteerAngle = 0f;
@@ -28,9 +31,12 @@ public class KartInput : MonoBehaviour
     private bool wasGrounded = false;
     private bool isBouncing = false;
     private float groundedTime = 0f;
+    
+    private float airborneTimer = 0f;
 
     private Vector3 targetPosition;
     private Quaternion targetRotation;
+    private Vector3 averagedNormal;
 
     private List<RaycastHit> groundHits = new List<RaycastHit>();
     
@@ -94,15 +100,21 @@ public class KartInput : MonoBehaviour
         }
 
         isGrounded = groundedTime > 0.05f;
+        
+        if (!isGrounded)
+        {
+            airborneTimer += Time.fixedDeltaTime;
+        }
 
         // State Machine Logic
         // Transition from Airborne to Grounded
-        if (!wasGrounded && isGrounded)
+        if (!wasGrounded && isGrounded && airborneTimer > 0.1f)
         {
             kartRigidbody.isKinematic = true;
             currentSpeed = kartRigidbody.linearVelocity.magnitude;
             kartRigidbody.Sleep();
             targetPosition = transform.position;
+            airborneTimer = 0f;
         }
 
         // Transition from Grounded to Airborne
@@ -110,6 +122,7 @@ public class KartInput : MonoBehaviour
         {
             kartRigidbody.isKinematic = false;
             kartRigidbody.linearVelocity = (targetRotation * Vector3.forward) * currentSpeed + Vector3.up * kartData.jumpForce;
+            airborneTimer = 0f;
         }
 
         // Main logic for grounded state
@@ -125,11 +138,18 @@ public class KartInput : MonoBehaviour
         }
         else // Main logic for airborne state
         {
-            // Apply continuous forward force only on the horizontal plane
             Vector3 horizontalForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             kartRigidbody.AddForce(horizontalForward * currentSpeed * kartData.airborneSpeedFactor, ForceMode.Acceleration);
         }
         
+        // This is the new, corrected way to apply the visual offset.
+        if (kartVisualsRoot != null && isGrounded)
+        {
+            float slopeAngle = Vector3.Angle(Vector3.up, averagedNormal);
+            float adjustedOffset = kartData.groundContactOffset + (0.005f * slopeAngle);
+            kartVisualsRoot.localPosition = new Vector3(0, adjustedOffset, 0);
+        }
+
         HandleWheelVisuals();
     }
     
@@ -139,22 +159,28 @@ public class KartInput : MonoBehaviour
         groundHits.Clear();
         int groundedCount = 0;
 
-        if (Physics.Raycast(leftFrontWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        // Corrected raycast origins to account for the visual offset
+        Vector3 raycastOrigin_FL = leftFrontWheel.position - transform.up * kartData.groundContactOffset;
+        Vector3 raycastOrigin_FR = rightFrontWheel.position - transform.up * kartData.groundContactOffset;
+        Vector3 raycastOrigin_BL = leftBackWheel.position - transform.up * kartData.groundContactOffset;
+        Vector3 raycastOrigin_BR = rightBackWheel.position - transform.up * kartData.groundContactOffset;
+
+        if (Physics.Raycast(raycastOrigin_FL, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
         {
             groundedCount++;
             groundHits.Add(hit);
         }
-        if (Physics.Raycast(rightFrontWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        if (Physics.Raycast(raycastOrigin_FR, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
         {
             groundedCount++;
             groundHits.Add(hit);
         }
-        if (Physics.Raycast(leftBackWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        if (Physics.Raycast(raycastOrigin_BL, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
         {
             groundedCount++;
             groundHits.Add(hit);
         }
-        if (Physics.Raycast(rightBackWheel.position, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
+        if (Physics.Raycast(raycastOrigin_BR, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
         {
             groundedCount++;
             groundHits.Add(hit);
@@ -248,12 +274,14 @@ public class KartInput : MonoBehaviour
 
     private void HandleGroundAlignment()
     {
-        Vector3 averagedNormal = Vector3.zero;
+        Vector3 tempAveragedNormal = Vector3.zero;
+        
         foreach (var hit in groundHits)
         {
-            averagedNormal += hit.normal;
+            tempAveragedNormal += hit.normal;
         }
-        averagedNormal.Normalize();
+        
+        averagedNormal = tempAveragedNormal.normalized;
 
         targetRotation = Quaternion.FromToRotation(targetRotation * Vector3.up, averagedNormal) * targetRotation;
     }
