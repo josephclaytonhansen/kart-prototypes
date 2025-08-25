@@ -31,15 +31,22 @@ MonoBehaviour:
   maxSteerAngle: 30
   wheelRadius: 0.5
   speedDampenOnWallCollision: 0.8
-  wallBounceStrength: 0.5
+  wallBounceStrength: 1
   chassisMesh: {fileID: 3596191092224140292, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
   chassisTexture: {fileID: 0}
   chassisLocalOffset: {x: 0, y: 0, z: 0}
-  frontWheelMesh: {fileID: 0}
-  frontWheelTexture: {fileID: 0}
-  frontLeftWheelLocalOffset: {x: 0, y: 0, z: 0}
-  frontRightWheelLocalOffset: {x: 0, y: 0, z: 0}
-  backWheelMesh: {fileID: 0}
-  backWheelTexture: {fileID: 0}
-  backLeftWheelLocalOffset: {x: 0, y: 0, z: 0}
-  backRightWheelLocalOffset: {x: 0, y: 0, z: 0}
+  frontLeftWheelMesh: {fileID: 4809851368588725899, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
+  frontLeftWheelTexture: {fileID: 0}
+  frontLeftWheelLocalOffset: {x: -0.67122126, y: 0.25490028, z: 0.79547787}
+  frontRightWheelMesh: {fileID: -569267690549817526, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
+  frontRightWheelTexture: {fileID: 0}
+  frontRightWheelLocalOffset: {x: 0.83885044, y: 0.25489575, z: 0.79547787}
+  backLeftWheelMesh: {fileID: 1992131841815414889, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
+  backLeftWheelTexture: {fileID: 0}
+  backLeftWheelLocalOffset: {x: -0.78285104, y: 0.31145352, z: -0.8847456}
+  backRightWheelMesh: {fileID: 7505671017961825152, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
+  backRightWheelTexture: {fileID: 0}
+  backRightWheelLocalOffset: {x: 0.89018154, y: 0.3608678, z: -0.9157524}
+  maxChassisTiltAngle: 10
+  tiltDampening: 5
+  yJitterThreshold: 0.01

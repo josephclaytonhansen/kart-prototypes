@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class KartMeshUpdate : MonoBehaviour
 {
+    public KartData kartData;
     [Header("Hierarchy References")]
     [Tooltip("The parent transform containing the chassis mesh renderer.")]
     public Transform chassisPivot;
@@ -26,7 +27,7 @@ public class KartMeshUpdate : MonoBehaviour
         if (backRightWheelPivot != null) backRightWheelRenderer = backRightWheelPivot.GetComponentInChildren<MeshRenderer>();
     }
 
-    public void UpdateVisuals(KartData kartData)
+    public void UpdateVisuals()
     {
         if (chassisPivot != null)
         {
@@ -36,23 +37,23 @@ public class KartMeshUpdate : MonoBehaviour
 
         if (frontLeftWheelPivot != null)
         {
-            UpdateMeshAndTexture(frontLeftWheelRenderer, kartData.frontWheelMesh, kartData.frontWheelTexture);
+            UpdateMeshAndTexture(frontLeftWheelRenderer, kartData.frontLeftWheelMesh, kartData.frontLeftWheelTexture);
             frontLeftWheelPivot.localPosition = kartData.frontLeftWheelLocalOffset;
         }
         if (frontRightWheelPivot != null)
         {
-            UpdateMeshAndTexture(frontRightWheelRenderer, kartData.frontWheelMesh, kartData.frontWheelTexture);
+            UpdateMeshAndTexture(frontRightWheelRenderer, kartData.frontRightWheelMesh, kartData.frontRightWheelTexture);
             frontRightWheelPivot.localPosition = kartData.frontRightWheelLocalOffset;
         }
 
         if (backLeftWheelPivot != null)
         {
-            UpdateMeshAndTexture(backLeftWheelRenderer, kartData.backWheelMesh, kartData.backWheelTexture);
+            UpdateMeshAndTexture(backLeftWheelRenderer, kartData.backLeftWheelMesh, kartData.backLeftWheelTexture);
             backLeftWheelPivot.localPosition = kartData.backLeftWheelLocalOffset;
         }
         if (backRightWheelPivot != null)
         {
-            UpdateMeshAndTexture(backRightWheelRenderer, kartData.backWheelMesh, kartData.backWheelTexture);
+            UpdateMeshAndTexture(backRightWheelRenderer, kartData.backRightWheelMesh, kartData.backRightWheelTexture);
             backRightWheelPivot.localPosition = kartData.backRightWheelLocalOffset;
         }
     }

@@ -84,14 +84,20 @@ public class KartData : ScriptableObject
     public Texture2D chassisTexture;
     public Vector3 chassisLocalOffset;
 
-    public Mesh frontWheelMesh;
-    public Texture2D frontWheelTexture;
+    public Mesh frontLeftWheelMesh;
+    public Texture2D frontLeftWheelTexture;
     public Vector3 frontLeftWheelLocalOffset;
+
+    public Mesh frontRightWheelMesh;
+    public Texture2D frontRightWheelTexture;
     public Vector3 frontRightWheelLocalOffset;
 
-    public Mesh backWheelMesh;
-    public Texture2D backWheelTexture;
+    public Mesh backLeftWheelMesh;
+    public Texture2D backLeftWheelTexture;
     public Vector3 backLeftWheelLocalOffset;
+
+    public Mesh backRightWheelMesh;
+    public Texture2D backRightWheelTexture;
     public Vector3 backRightWheelLocalOffset;
 
     public float maxChassisTiltAngle = 10f;
