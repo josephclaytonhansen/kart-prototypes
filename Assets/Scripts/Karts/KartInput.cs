@@ -10,6 +10,7 @@ public class KartInput : MonoBehaviour
     public InputAction steerAction; 
     public InputAction accelerateAction; 
     public InputAction brakeAction; 
+    public InputAction trickAction;
     
     [Header("Kart Components")] 
     public Transform leftFrontWheel; 
@@ -20,15 +21,28 @@ public class KartInput : MonoBehaviour
     public Rigidbody kartRigidbody; 
     public Transform kartVisualsRoot; 
 
-    [Header("Airborne Settings")]
+    [Header("Jump and Fall Settings")]
+    [Tooltip("Controls the upward force of a player-initiated jump.")]
+    public float jumpForce = 15f; 
+    [Tooltip("Controls the manual downward gravity applied during a jump arc.")]
+    public float manualFallGravity = 20f;
+    [Tooltip("Time the kart can be airborne on a hop before physics takes over.")]
+    public float hopGracePeriod = 0.15f;
+    [Tooltip("Intensity of the visual hop effect on small bumps.")]
+    public float visualHopIntensity = 0.05f;
+
+    [Header("Landing Assist")]
     public float landingAssistLookahead = 0.5f;
     public float landingRayLength = 5.0f;
     public float transitionDuration = 0.2f;
+    [Tooltip("Extra vertical offset added during landing transition to ensure kart lands above the ground.")]
+    public float landingHeightOffset = 0.1f; 
 
     [Header("Suspension Visuals")]
     public Transform chassisVisuals;
 
     private bool isTransitioningToGrounded = false;
+    private bool isJumping = false;
     private Vector3 transitionStartPosition;
     private Quaternion transitionStartRotation;
     private float transitionTimer = 0f;
@@ -37,7 +51,7 @@ public class KartInput : MonoBehaviour
     private float steerInput = 0f; 
     private float currentSteerAngle = 0f; 
     private float currentSpeed = 0f; 
-    
+
     private RaycastHit lookaheadHitInfo; 
     public BoxCollider kartCollider; 
     
@@ -57,9 +71,9 @@ public class KartInput : MonoBehaviour
     public UnityEvent onDecelerate; 
     public UnityEvent onBrake; 
     public UnityEvent onSteer; 
-    public UnityEvent onJump;
+    public UnityEvent onTrick; 
     public UnityEvent onLanding;
-    public UnityEvent onWallCollision; // New event
+    public UnityEvent onWallCollision; 
 
     public void Awake() 
     { 
@@ -68,6 +82,7 @@ public class KartInput : MonoBehaviour
         accelerateAction.performed += OnAccelerate; 
         accelerateAction.canceled += OnAccelerateCanceled; 
         brakeAction.performed += OnBrake; 
+        trickAction.performed += OnTrick;
 
         kartRigidbody.isKinematic = true;
         kartRigidbody.useGravity = false;
@@ -100,58 +115,83 @@ public class KartInput : MonoBehaviour
     { 
         onAccelerate.Invoke(); 
     } 
+    
+    private void OnTrick(InputAction.CallbackContext context)
+    {
+        if (!isGrounded)
+        {
+            onTrick.Invoke();
+        }
+    }
 
     void FixedUpdate() 
     { 
         wasGrounded = isGrounded; 
         isGrounded = CheckGround(); 
         
-        // Handle transitions between states
-        if (isGrounded && !wasGrounded) 
+        if (wasGrounded && !isGrounded && CheckRampJump())
         {
-            // Transition from Airborne to Grounded
-            // This is now handled by the landing transition logic
-            if (!isTransitioningToGrounded)
+            InitiateRampJump();
+        }
+
+        if (isGrounded) 
+        { 
+            if (!wasGrounded)
             {
-                // Fallback for small hops where a transition wasn't needed
-                kartRigidbody.isKinematic = true;
-                kartRigidbody.useGravity = false;
-                kartRigidbody.Sleep();
-                
-                if (airborneTimer > 0.05f) 
+                if (airborneTimer > hopGracePeriod)
                 {
                     onLanding.Invoke();
                 }
+                
+                kartRigidbody.isKinematic = true;
+                kartRigidbody.useGravity = false;
+                kartRigidbody.Sleep();
+                isJumping = false;
             }
-            airborneTimer = 0f;
-        } 
-        
-        if (wasGrounded && !isGrounded) 
-        { 
-            // Transition from Grounded to Airborne
-            kartRigidbody.isKinematic = false;
-            kartRigidbody.useGravity = true;
-            kartRigidbody.linearVelocity = transform.forward * currentSpeed + Vector3.up * kartData.jumpForce; 
-            airborneTimer = 0f; 
-            onJump.Invoke();
-        } 
 
-        // Main logic for grounded state
-        if (isGrounded) 
-        { 
+            airborneTimer = 0f;
             HandleMovement(); 
             HandleSteering(); 
             HandleGroundAlignment(); 
         } 
-        else // Main logic for airborne state
+        else // Airborne state
         {
             airborneTimer += Time.fixedDeltaTime;
             
-            // Landing Assist: Anticipate landing and start smooth transition
+            if (airborneTimer < hopGracePeriod && !isJumping)
+            {
+                Vector3 moveDirection = (targetRotation * Vector3.forward) * currentSpeed;
+                targetPosition += moveDirection * Time.fixedDeltaTime;
+                targetPosition.y += Physics.gravity.y * Time.fixedDeltaTime * Time.fixedDeltaTime;
+
+                if (kartVisualsRoot != null)
+                {
+                    float hopLerp = Mathf.InverseLerp(0, hopGracePeriod, airborneTimer);
+                    float yOffset = Mathf.Sin(hopLerp * Mathf.PI) * visualHopIntensity;
+                    kartVisualsRoot.localPosition = Vector3.Lerp(kartVisualsRoot.localPosition, new Vector3(0, kartData.groundContactOffset + yOffset, 0), Time.fixedDeltaTime * 10f);
+                }
+            }
+            else
+            {
+                if (isJumping)
+                {
+                    kartRigidbody.linearVelocity += Vector3.down * manualFallGravity * Time.fixedDeltaTime;
+                }
+                else
+                {
+                    if (kartRigidbody.isKinematic)
+                    {
+                        kartRigidbody.isKinematic = false;
+                        kartRigidbody.useGravity = true;
+                        kartRigidbody.linearVelocity = transform.forward * currentSpeed;
+                    }
+                }
+            }
+
             Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, landingAssistLookahead).normalized;
             Debug.DrawRay(transform.position, raycastDirection * landingRayLength, Color.red);
 
-            if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, landingRayLength, kartData.groundLayer) && airborneTimer > 0.2f)
+            if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, landingRayLength, kartData.groundLayer) && airborneTimer > hopGracePeriod)
             {
                 if (!isTransitioningToGrounded)
                 {
@@ -161,24 +201,43 @@ public class KartInput : MonoBehaviour
         } 
     } 
 
+    private void InitiateRampJump()
+    {
+        isJumping = true;
+        kartRigidbody.isKinematic = false;
+        kartRigidbody.useGravity = false;
+        
+        kartRigidbody.linearVelocity = transform.forward * currentSpeed + Vector3.up * jumpForce;
+        airborneTimer = 0f; 
+        onTrick.Invoke();
+    }
+    
+    private bool CheckRampJump()
+    {
+        bool backWheelsOnGround = CheckRaycast(leftBackWheel.position) && CheckRaycast(rightBackWheel.position);
+        bool frontWheelsOnGround = CheckRaycast(leftFrontWheel.position) || CheckRaycast(rightFrontWheel.position);
+
+        return backWheelsOnGround && !frontWheelsOnGround;
+    }
+    
+    private bool CheckRaycast(Vector3 position)
+    {
+        return Physics.Raycast(position - transform.up * kartData.groundContactOffset, -transform.up, kartData.groundCheckDistance, kartData.groundLayer);
+    }
+
     void Update()
     {
-        // This is now our single point for applying the smooth position and rotation changes.
         if (isTransitioningToGrounded)
         {
             HandleLandingTransition();
         }
         else if (isGrounded)
         {
-            // When grounded, smoothly lerp to the target
             transform.position = Vector3.Lerp(transform.position, targetPosition, 25f * Time.deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 25f * Time.deltaTime);
         }
 
-        // Apply visual tilt and Y offset
         HandleChassisVisuals();
-        
-        // Handle wheel visuals independently of the main kart body
         HandleWheelVisuals();
     }
     
@@ -194,8 +253,8 @@ public class KartInput : MonoBehaviour
         transitionStartPosition = transform.position;
         transitionStartRotation = transform.rotation;
         
-        // Use the landing assist hit for a precise landing position and rotation
-        targetPosition = landingAssistHit.point + (Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation * Vector3.up * kartData.groundContactOffset);
+        float finalOffset = kartData.groundContactOffset + landingHeightOffset;
+        targetPosition = landingAssistHit.point + landingAssistHit.normal * finalOffset;
         targetRotation = Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation;
         
         currentSpeed = kartRigidbody.linearVelocity.magnitude;
@@ -262,7 +321,6 @@ public class KartInput : MonoBehaviour
         } 
         averagedNormal = tempAveragedNormal.normalized; 
 
-        // Always be considered grounded if the back two wheels are.
         return groundedCount >= 3 || (groundedCount >= 2 && backWheelsGrounded); 
     } 
 
@@ -320,7 +378,6 @@ public class KartInput : MonoBehaviour
 
             float angleToWall = Vector3.Angle(kartForwardOnGround, hitNormalOnGround); 
 
-            // Only bounce if the angle is steep enough, otherwise stop.
             if (angleToWall > 70f) 
             { 
                 Vector3 incomingVector = kartForwardOnGround.normalized; 
@@ -368,7 +425,6 @@ public class KartInput : MonoBehaviour
 
     private void HandleChassisVisuals()
     {
-        // Apply visual tilt to the dedicated chassis object
         if (chassisVisuals != null)
         {
             Quaternion targetTilt = Quaternion.Euler(0, steerInput * kartData.maxChassisTiltAngle, 0);
@@ -413,6 +469,7 @@ public class KartInput : MonoBehaviour
         steerAction.Enable(); 
         accelerateAction.Enable(); 
         brakeAction.Enable(); 
+        trickAction.Enable();
     } 
 
     public void OnDisable() 
@@ -420,5 +477,6 @@ public class KartInput : MonoBehaviour
         steerAction.Disable(); 
         accelerateAction.Disable(); 
         brakeAction.Disable(); 
+        trickAction.Disable();
     } 
 }
