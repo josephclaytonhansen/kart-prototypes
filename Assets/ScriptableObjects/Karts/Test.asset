@@ -27,7 +27,7 @@ MonoBehaviour:
   bounceStrength: 10
   jumpForce: 5
   airborneSpeedFactor: 1
-  groundContactOffset: -0.3
+  groundContactOffset: 0
   maxSteerAngle: 30
   wheelRadius: 0.5
   speedDampenOnWallCollision: 0.8

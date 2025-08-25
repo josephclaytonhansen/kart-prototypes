@@ -24,12 +24,14 @@ public class KartInput : MonoBehaviour
     [Header("Jump and Fall Settings")]
     [Tooltip("Controls the upward force of a player-initiated jump.")]
     public float jumpForce = 15f;
-    [Tooltip("Controls the manual downward gravity applied during a jump arc.")]
-    public float manualFallGravity = 20f;
     [Tooltip("Time the kart can be airborne on a hop before physics takes over.")]
     public float hopGracePeriod = 0.15f;
     [Tooltip("Intensity of the visual hop effect on small bumps.")]
     public float visualHopIntensity = 0.05f;
+
+    private bool isOnRamp = false;
+    private bool isPerformingTrick = false;
+    private bool isJumping = false;
 
     [Header("Landing Assist")]
     public float landingAssistLookahead = 0.5f;
@@ -42,7 +44,6 @@ public class KartInput : MonoBehaviour
     public Transform chassisVisuals;
 
     private bool isTransitioningToGrounded = false;
-    private bool isJumping = false;
     private Vector3 transitionStartPosition;
     private Quaternion transitionStartRotation;
     private float transitionTimer = 0f;
@@ -66,7 +67,7 @@ public class KartInput : MonoBehaviour
 
     private List<RaycastHit> groundHits = new List<RaycastHit>();
 
-    [Header ("Events")]
+    [Header("Events")]
     public UnityEvent onAccelerate;
     public UnityEvent onDecelerate;
     public UnityEvent onBrake;
@@ -118,13 +119,10 @@ public class KartInput : MonoBehaviour
 
     private void OnTrick(InputAction.CallbackContext context)
     {
-        if (isGrounded)
+        if (isJumping)
         {
-            isJumping = true;
-            kartRigidbody.isKinematic = false;
-            kartRigidbody.useGravity = false;
-            kartRigidbody.linearVelocity = transform.forward * currentSpeed + Vector3.up * jumpForce;
-            airborneTimer = 0f;
+            isPerformingTrick = true;
+            onTrick.Invoke();
         }
     }
 
@@ -146,54 +144,37 @@ public class KartInput : MonoBehaviour
                 kartRigidbody.useGravity = false;
                 kartRigidbody.Sleep();
                 isJumping = false;
+                isPerformingTrick = false;
             }
 
             airborneTimer = 0f;
             HandleGroundedMovementAndAlignment();
         }
-        else
+        else // Airborne State
         {
             airborneTimer += Time.fixedDeltaTime;
 
-            if (airborneTimer < hopGracePeriod && !isJumping)
+            // This is the core change: transition to a physics Rigidbody immediately.
+            // This happens for both ramp jumps AND falls off an edge.
+            if (kartRigidbody.isKinematic)
             {
-                Vector3 moveDirection = (targetRotation * Vector3.forward) * currentSpeed;
-                targetPosition += moveDirection * Time.fixedDeltaTime;
-                targetPosition.y += Physics.gravity.y * Time.fixedDeltaTime * Time.fixedDeltaTime;
-
-                if (kartVisualsRoot != null)
-                {
-                    float hopLerp = Mathf.InverseLerp(0, hopGracePeriod, airborneTimer);
-                    float yOffset = Mathf.Sin(hopLerp * Mathf.PI) * visualHopIntensity;
-                    kartVisualsRoot.localPosition = Vector3.Lerp(kartVisualsRoot.localPosition, new Vector3(0, kartData.groundContactOffset + yOffset, 0), Time.fixedDeltaTime * 10f);
-                }
+                kartRigidbody.isKinematic = false;
+                kartRigidbody.useGravity = true;
+                // Preserve forward velocity. We only apply a new jump impulse in the jump method.
+                kartRigidbody.linearVelocity = transform.forward * currentSpeed;
             }
-            else
-            {
-                if (isJumping)
-                {
-                    kartRigidbody.linearVelocity += Vector3.down * manualFallGravity * Time.fixedDeltaTime;
-                }
-                else
-                {
-                    if (kartRigidbody.isKinematic)
-                    {
-                        kartRigidbody.isKinematic = false;
-                        kartRigidbody.useGravity = true;
-                        kartRigidbody.linearVelocity = transform.forward * currentSpeed;
-                    }
-                }
-            }
+        }
 
-            Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, landingAssistLookahead).normalized;
-            Debug.DrawRay(transform.position, raycastDirection * landingRayLength, Color.red);
+        // The remaining logic for landing assist and visuals is unchanged
+        // as it was already working correctly.
+        Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, landingAssistLookahead).normalized;
+        Debug.DrawRay(transform.position, raycastDirection * landingRayLength, Color.red);
 
-            if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, landingRayLength, kartData.groundLayer) && airborneTimer > hopGracePeriod)
+        if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, landingRayLength, kartData.groundLayer) && airborneTimer > hopGracePeriod)
+        {
+            if (!isTransitioningToGrounded)
             {
-                if (!isTransitioningToGrounded)
-                {
-                    StartLandingTransition();
-                }
+                StartLandingTransition();
             }
         }
     }
@@ -258,12 +239,13 @@ public class KartInput : MonoBehaviour
         int groundedCount = 0;
 
         RaycastHit hit;
-        bool backWheelsGrounded = false;
 
         Vector3 raycastOrigin_FL = leftFrontWheel.position - transform.up * kartData.groundContactOffset;
         Vector3 raycastOrigin_FR = rightFrontWheel.position - transform.up * kartData.groundContactOffset;
         Vector3 raycastOrigin_BL = leftBackWheel.position - transform.up * kartData.groundContactOffset;
         Vector3 raycastOrigin_BR = rightBackWheel.position - transform.up * kartData.groundContactOffset;
+
+        bool backWheelsGrounded = false;
 
         if (Physics.Raycast(raycastOrigin_FL, -transform.up, out hit, kartData.groundCheckDistance, kartData.groundLayer))
         {
@@ -300,7 +282,6 @@ public class KartInput : MonoBehaviour
 
     private void HandleGroundedMovementAndAlignment()
     {
-        // Handle Steering and Acceleration/Deceleration
         HandleSteering();
         if (accelerateAction.IsPressed())
         {
@@ -322,13 +303,9 @@ public class KartInput : MonoBehaviour
             currentSpeed = Mathf.Lerp(currentSpeed, 0, kartData.deceleration * Time.fixedDeltaTime);
         }
 
-        // Project the forward movement onto the averaged ground normal's plane
         Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, averagedNormal);
-
-        // Update target rotation to align with the ground
         targetRotation = Quaternion.LookRotation(forwardOnGround, averagedNormal);
 
-        // Wall collision check
         bool lookaheadHitFound = false;
         if (kartCollider != null && Mathf.Abs(currentSpeed) > 0.1f)
         {
@@ -340,19 +317,15 @@ public class KartInput : MonoBehaviour
 
             float boxCastDistance = currentSpeed * Time.fixedDeltaTime;
             Vector3 castOrigin = transform.position + (transform.forward * 0.5f);
-
-            // Use a specific layer mask for non-ground objects
             int wallLayer = ~(kartData.groundLayer);
-
             lookaheadHitFound = Physics.BoxCast(castOrigin, kartCollider.size * 0.5f, boxCastDirection, out lookaheadHitInfo, targetRotation, boxCastDistance, wallLayer);
         }
 
         if (lookaheadHitFound)
         {
-            // The angle check is now based on your specific requirement
             float angleToUp = Vector3.Angle(lookaheadHitInfo.normal, Vector3.up);
 
-            if (angleToUp > 45f) // This is a wall
+            if (angleToUp > 45f)
             {
                 onWallCollision.Invoke();
                 
@@ -370,7 +343,7 @@ public class KartInput : MonoBehaviour
                 
                 targetPosition += reflectionVector * (currentSpeed * Time.fixedDeltaTime);
             }
-            else // This is a slope, let the regular movement logic handle it
+            else
             {
                 Vector3 moveDirection = forwardOnGround.normalized * currentSpeed;
                 targetPosition += moveDirection * Time.fixedDeltaTime;
@@ -378,16 +351,13 @@ public class KartInput : MonoBehaviour
         }
         else
         {
-            // Move the target position along the projected forward vector
             Vector3 moveDirection = forwardOnGround.normalized * currentSpeed;
             targetPosition += moveDirection * Time.fixedDeltaTime;
         }
 
-        // Final height correction based on a central raycast
         RaycastHit heightHit;
         if (Physics.Raycast(targetPosition + Vector3.up * kartData.groundCheckDistance, Vector3.down, out heightHit, kartData.groundCheckDistance * 2, kartData.groundLayer))
         {
-            // Set the final target position to be the hit point plus the offset, but maintain the horizontal movement
             Vector3 newTargetPos = targetPosition;
             newTargetPos.y = heightHit.point.y + kartData.groundContactOffset;
             targetPosition = newTargetPos;
@@ -424,7 +394,6 @@ public class KartInput : MonoBehaviour
 
         if (kartVisualsRoot != null && isGrounded)
         {
-            // New logic: Base the visual offset directly on the average height of the wheel raycast hits.
             float averageHitHeight = 0f;
             if (groundHits.Count > 0)
             {
@@ -457,6 +426,35 @@ public class KartInput : MonoBehaviour
         rightFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
         leftBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
         rightBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
+    }
+    
+    private void HandleRampJump()
+    {
+        isJumping = true;
+        // Core change: use AddForce() to add to existing velocity
+        kartRigidbody.AddForce(transform.up * jumpForce, ForceMode.VelocityChange);
+        airborneTimer = 0f;
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("JumpRamp"))
+        {
+            isOnRamp = true;
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("JumpRamp") && isOnRamp)
+        {
+            isOnRamp = false;
+            HandleRampJump();
+        }
+        else
+        {
+            isOnRamp = false;
+        }
     }
 
     public void OnEnable()
