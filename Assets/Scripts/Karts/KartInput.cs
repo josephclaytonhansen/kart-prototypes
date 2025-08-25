@@ -424,15 +424,19 @@ public class KartInput : MonoBehaviour
 
         if (kartVisualsRoot != null && isGrounded)
         {
-            float slopeAngle = Vector3.Angle(Vector3.up, averagedNormal);
-            float adjustedOffset = kartData.groundContactOffset;
-
-            if (Mathf.Abs(currentSpeed) > 0.1f)
+            // New logic: Base the visual offset directly on the average height of the wheel raycast hits.
+            float averageHitHeight = 0f;
+            if (groundHits.Count > 0)
             {
-                adjustedOffset += (0.02f * slopeAngle);
+                foreach (var hit in groundHits)
+                {
+                    averageHitHeight += hit.point.y;
+                }
+                averageHitHeight /= groundHits.Count;
             }
 
-            Vector3 newLocalPos = new Vector3(0, adjustedOffset, 0);
+            Vector3 newLocalPos = new Vector3(0, (averageHitHeight - transform.position.y) + kartData.groundContactOffset, 0);
+
             if (Vector3.Distance(kartVisualsRoot.localPosition, newLocalPos) > kartData.yJitterThreshold)
             {
                 kartVisualsRoot.localPosition = Vector3.Lerp(kartVisualsRoot.localPosition, newLocalPos, kartData.tiltDampening * Time.fixedDeltaTime);
