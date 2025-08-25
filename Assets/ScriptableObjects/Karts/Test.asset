@@ -49,4 +49,4 @@ MonoBehaviour:
   backRightWheelLocalOffset: {x: 0.89018154, y: 0.3608678, z: -0.9157524}
   maxChassisTiltAngle: 10
   tiltDampening: 5
-  yJitterThreshold: 0.01
+  yJitterThreshold: 0.02

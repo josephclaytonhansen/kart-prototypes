@@ -1079,7 +1079,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Damping.y
-      value: 0.4
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Lookahead.Enabled
@@ -1099,7 +1099,7 @@ PrefabInstance:
       objectReference: {fileID: 543450653141956262}
     - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Damping.y
-      value: 0.4
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: AvoidObstacles.Enabled
