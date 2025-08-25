@@ -1098,6 +1098,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7063618612648404485, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: Lens.FarClipPlane
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 7063618612648404485, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Target.TrackingTarget
       value: 
       objectReference: {fileID: 543450653141956262}
