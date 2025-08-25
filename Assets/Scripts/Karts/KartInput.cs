@@ -51,7 +51,7 @@ public class KartInput : MonoBehaviour
     private float steerInput = 0f; 
     private float currentSteerAngle = 0f; 
     private float currentSpeed = 0f; 
-
+    
     private RaycastHit lookaheadHitInfo; 
     public BoxCollider kartCollider; 
     
@@ -118,9 +118,14 @@ public class KartInput : MonoBehaviour
     
     private void OnTrick(InputAction.CallbackContext context)
     {
-        if (!isGrounded)
+        if (isGrounded)
         {
-            onTrick.Invoke();
+            isJumping = true;
+            kartRigidbody.isKinematic = false;
+            kartRigidbody.useGravity = false;
+            // Now references the local variable
+            kartRigidbody.linearVelocity = transform.forward * currentSpeed + Vector3.up * jumpForce; 
+            airborneTimer = 0f; 
         }
     }
 
@@ -129,11 +134,6 @@ public class KartInput : MonoBehaviour
         wasGrounded = isGrounded; 
         isGrounded = CheckGround(); 
         
-        if (wasGrounded && !isGrounded && CheckRampJump())
-        {
-            InitiateRampJump();
-        }
-
         if (isGrounded) 
         { 
             if (!wasGrounded)
@@ -154,7 +154,7 @@ public class KartInput : MonoBehaviour
             HandleSteering(); 
             HandleGroundAlignment(); 
         } 
-        else // Airborne state
+        else
         {
             airborneTimer += Time.fixedDeltaTime;
             
@@ -175,6 +175,7 @@ public class KartInput : MonoBehaviour
             {
                 if (isJumping)
                 {
+                    // Now references the local variable
                     kartRigidbody.linearVelocity += Vector3.down * manualFallGravity * Time.fixedDeltaTime;
                 }
                 else
@@ -200,30 +201,6 @@ public class KartInput : MonoBehaviour
             }
         } 
     } 
-
-    private void InitiateRampJump()
-    {
-        isJumping = true;
-        kartRigidbody.isKinematic = false;
-        kartRigidbody.useGravity = false;
-        
-        kartRigidbody.linearVelocity = transform.forward * currentSpeed + Vector3.up * jumpForce;
-        airborneTimer = 0f; 
-        onTrick.Invoke();
-    }
-    
-    private bool CheckRampJump()
-    {
-        bool backWheelsOnGround = CheckRaycast(leftBackWheel.position) && CheckRaycast(rightBackWheel.position);
-        bool frontWheelsOnGround = CheckRaycast(leftFrontWheel.position) || CheckRaycast(rightFrontWheel.position);
-
-        return backWheelsOnGround && !frontWheelsOnGround;
-    }
-    
-    private bool CheckRaycast(Vector3 position)
-    {
-        return Physics.Raycast(position - transform.up * kartData.groundContactOffset, -transform.up, kartData.groundCheckDistance, kartData.groundLayer);
-    }
 
     void Update()
     {
