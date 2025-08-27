@@ -740,7 +740,7 @@ MonoBehaviour:
   leftBackWheel: {fileID: 1870191524}
   rightBackWheel: {fileID: 1698632587}
   kartData: {fileID: 11400000, guid: cb324987908ed4840b8eac3b56b09f9d, type: 2}
-  kartGameSettings: {fileID: 11400000, guid: edc0ea04f22357942892e6eb4964ef7f, type: 2}
+  kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
   kartRigidbody: {fileID: 919132148681321501}
   kartVisualsRoot: {fileID: 1793845977}
   kartCollider: {fileID: 6835908548692531381}

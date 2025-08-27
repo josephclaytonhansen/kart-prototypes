@@ -50,6 +50,7 @@ public class KartInput : MonoBehaviour
     private Quaternion bounceStartRotation;
     private Quaternion bounceTargetRotation;
     private float preCollisionSpeed = 0f;
+    private Vector3 bounceVelocity;
 
     [Header("Suspension Visuals")]
     public Transform chassisVisuals;
@@ -157,8 +158,8 @@ public class KartInput : MonoBehaviour
     {
         steerInput = context.ReadValue<float>();
         onSteer.Invoke();
-
     }
+
     public void OnDrift(InputAction.CallbackContext context)
     {
         if (isGrounded && accelerateAction.IsPressed() && steerInput != 0 && !isDrifting)
@@ -217,7 +218,7 @@ public class KartInput : MonoBehaviour
         {
             HandleGroundedMovement();
         }
-        else // Airborne State
+        else
         {
             HandleAirborneMovement();
         }
@@ -263,7 +264,6 @@ public class KartInput : MonoBehaviour
         HandleSteering();
         HandleDriving();
         HandleAlignment();
-        HandleWallCollisions();
     }
 
     private void HandleAirborneMovement()
@@ -340,7 +340,7 @@ public class KartInput : MonoBehaviour
             }
         }
 
-        Vector3 movementDirection;
+        Vector3 movementDirection = transform.forward;
         Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, averagedNormal);
 
         if (isDrifting || autoDrift)
@@ -352,6 +352,38 @@ public class KartInput : MonoBehaviour
         {
             movementDirection = forwardOnGround.normalized;
         }
+
+        // PREDICTIVE COLLISION CHECK
+        // Dynamically calculate the raycast distance based on the predicted movement speed and a safety factor.
+        float checkDistance = (currentSpeed * Time.fixedDeltaTime) + kartGameSettings.collisionLookahead;
+        Vector3 checkDirection = movementDirection;
+        
+        if (Physics.Raycast(transform.position, checkDirection, out lookaheadHitInfo, checkDistance, kartData.groundLayer))
+        {
+            onWallCollision.Invoke();
+            float wallAngle = Vector3.Angle(lookaheadHitInfo.normal, Vector3.up);
+
+            if (wallAngle > kartGameSettings.wallAngleThreshold)
+            {
+                // Head-On Collision: Stop and bounce backward
+                currentSpeed = -kartGameSettings.headOnBounceSpeed;
+                targetPosition = lookaheadHitInfo.point + lookaheadHitInfo.normal * kartGameSettings.bounceSafeDistance;
+            }
+            else
+            {
+                // Glancing Collision: Slide along the wall with a slight bounce
+                Vector3 wallTangent = Vector3.Cross(lookaheadHitInfo.normal, Vector3.up).normalized;
+                if (Vector3.Dot(wallTangent, movementDirection) < 0)
+                {
+                    wallTangent *= -1;
+                }
+                
+                movementDirection = (wallTangent * (1 - kartGameSettings.glancingBounceFactor)) + (lookaheadHitInfo.normal * kartGameSettings.glancingBounceFactor);
+                currentSpeed *= (1f - kartGameSettings.glancingSpeedLoss);
+                targetPosition = lookaheadHitInfo.point + lookaheadHitInfo.normal * kartGameSettings.bounceSafeDistance;
+            }
+        }
+        
         targetPosition += movementDirection * currentSpeed * Time.fixedDeltaTime;
     }
 
@@ -372,33 +404,6 @@ public class KartInput : MonoBehaviour
             Vector3 newTargetPos = targetPosition;
             newTargetPos.y = averageHitHeight + kartData.groundContactOffset;
             targetPosition = newTargetPos;
-        }
-    }
-
-    private void HandleWallCollisions()
-    {
-        if (kartCollider != null && Mathf.Abs(currentSpeed) > 0.1f)
-        {
-            Vector3 boxCastDirection = (currentSpeed > 0) ? transform.forward : -transform.forward;
-            float boxCastDistance = Mathf.Abs(currentSpeed) * Time.fixedDeltaTime;
-            Vector3 castOrigin = transform.position + (transform.forward * 0.5f);
-            int wallLayer = ~(kartData.groundLayer);
-
-            if (Physics.BoxCast(castOrigin, kartCollider.size * 0.5f, boxCastDirection, out lookaheadHitInfo, targetRotation, boxCastDistance, wallLayer))
-            {
-                if (Vector3.Angle(lookaheadHitInfo.normal, Vector3.up) > 45f)
-                {
-                    onWallCollision.Invoke();
-                    Vector3 incomingVector = (currentSpeed > 0) ? transform.forward : -transform.forward;
-
-                    Vector3 reflectionVector = Vector3.Reflect(incomingVector, lookaheadHitInfo.normal);
-                    reflectionVector = Vector3.ProjectOnPlane(reflectionVector, averagedNormal).normalized;
-
-                    currentSpeed *= 0.8f;
-                    targetRotation = Quaternion.LookRotation(reflectionVector, averagedNormal);
-                    targetPosition += reflectionVector * (currentSpeed * Time.fixedDeltaTime);
-                }
-            }
         }
     }
 
@@ -465,7 +470,6 @@ public class KartInput : MonoBehaviour
                 groundHits.Add(hit);
                 tempAveragedNormal += hit.normal;
 
-                // Check if back wheels are grounded
                 if (i >= 2)
                 {
                     backWheelsGrounded = true;

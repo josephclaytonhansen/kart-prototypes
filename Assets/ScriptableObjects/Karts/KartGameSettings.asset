@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2d290673428e1ea4494e10faef1b5637, type: 3}
-  m_Name: TestGameSettings
+  m_Name: KartGameSettings
   m_EditorClassIdentifier: Assembly-CSharp::KartGameSettings
   driftTimeToBlueBoost: 1.5
   driftTimeToOrangeBoost: 2
@@ -19,18 +19,13 @@ MonoBehaviour:
   landingRayLength: 5
   transitionDuration: 0.2
   landingHeightOffset: 0.1
-  selectableLayerMask:
-    serializedVersion: 2
-    m_Bits: 0
-  bounceDuration: 0.25
   collisionLookahead: 0.1
-  minCollisionDeceleration: 0.3
-  maxCollisionDeceleration: 0.8
-  minBounceDistance: 0.5
-  maxBounceDistance: 2
-  wallSafeDistance: 0.2
   wallAngleThreshold: 45
-  weightRange: {x: 50, y: 500}
+  bounceDuration: 0.5
+  headOnSpeedLoss: 0.95
+  glancingSpeedLoss: 0.2
+  glancingSlideFactor: 0.5
+  bounceSafeDistance: 0.2
   jumpForce: 15
   hopGracePeriod: 0.15
   visualHopIntensity: 0.05

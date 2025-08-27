@@ -18,24 +18,31 @@ public class KartGameSettings : ScriptableObject
     public float landingHeightOffset = 0.1f;
 
     [Header("Collision Settings")]
-    public LayerMask selectableLayerMask;
-    public float bounceDuration = 0.25f;
     [Tooltip("Distance ahead to check for collisions based on current speed")]
     public float collisionLookahead = 0.1f;
-    [Tooltip("Minimum speed deceleration on head-on collision")]
-    public float minCollisionDeceleration = 0.3f;
-    [Tooltip("Maximum speed deceleration on head-on collision")]
-    public float maxCollisionDeceleration = 0.8f;
-    [Tooltip("Minimum bounce distance")]
-    public float minBounceDistance = 0.5f;
-    [Tooltip("Maximum bounce distance")]
-    public float maxBounceDistance = 2.0f;
-    [Tooltip("Safe distance from wall surface")]
-    public float wallSafeDistance = 0.2f;
     [Tooltip("Angle threshold to determine if surface is a wall (degrees)")]
     public float wallAngleThreshold = 45f;
-    [Tooltip("Weight range for kart data (min-max)")]
-    public Vector2 weightRange = new Vector2(50f, 500f);
+
+    [Tooltip("The duration of the bounce transition in seconds.")]
+    public float bounceDuration = 0.5f;
+
+    [Tooltip("The speed reduction factor for a head-on collision (0.0 to 1.0).")]
+    public float headOnSpeedLoss = 0.95f; // Very high speed loss for a hard stop and reversal
+
+    [Tooltip("The speed reduction factor for a glancing collision (0.0 to 1.0).")]
+    public float glancingSpeedLoss = 0.2f;
+
+    [Tooltip("The forward speed multiplier during a glancing collision.")]
+    public float glancingSlideFactor = 0.5f;
+
+    [Tooltip("The distance to start the bounce transition from the wall.")]
+    public float bounceSafeDistance = 0.2f;
+
+    [Tooltip("The speed to bounce backward at for a head-on collision.")]
+    public float headOnBounceSpeed = 2.0f;
+
+    [Tooltip("The strength of the bounce away from the wall during a glancing collision.")]
+    public float glancingBounceFactor = 0.2f;
 
     [Header("Jump and Fall Settings")]
     [Tooltip("Controls the upward force of a player-initiated jump.")]
@@ -44,4 +51,10 @@ public class KartGameSettings : ScriptableObject
     public float hopGracePeriod = 0.15f;
     [Tooltip("Intensity of the visual hop effect on small bumps.")]
     public float visualHopIntensity = 0.05f;
+
+    public enum BounceType
+    {
+        HeadOn,
+        Glancing
+    }
 }
