@@ -772,7 +772,19 @@ MonoBehaviour:
       m_Calls: []
   onGroundedOnDeathLayer:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 919132148681321503}
+        m_TargetAssemblyTypeName: KartApex, Assembly-CSharp
+        m_MethodName: RecoverFromDeath
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &734084223
 GameObject:
   m_ObjectHideFlags: 0
@@ -1326,11 +1338,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KartManager
   karts:
   - {fileID: 919132148681321503}
-  kartInputs:
-  - {fileID: 565054161}
-  cpuKarts: []
   kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
-  trackPlacements: 
   totalLaps: 0
 --- !u!4 &1910541944
 Transform:
@@ -1652,8 +1660,7 @@ MonoBehaviour:
   playerControlled: 1
   cpuKart: {fileID: 0}
   kartInput: {fileID: 565054161}
-  frozen: 0
-  respawnPoint: {x: 0, y: 0, z: 0}
+  controllerActive: 0
   deathLayer:
     serializedVersion: 2
     m_Bits: 2147483648
@@ -1668,10 +1675,17 @@ MonoBehaviour:
   kartRigidbody: {fileID: 919132148681321501}
   kartVisualsRoot: {fileID: 1793845977}
   kartCollider: {fileID: 6835908548692531381}
-  autoDrift: 0
+  autoDrift: 1
   kartMeshUpdate: {fileID: 919132148681321502}
   kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
   chassisVisuals: {fileID: 317479229480042518}
+  frozen: 0
+  lapCount: 0
+  lapTimes: []
+  trackPlacement: 0
+  desiredPlacement: 0
+  respawnPoint: {x: 0, y: 0, z: 0}
+  startingPlacement: 0
 --- !u!1 &1035127029122512773
 GameObject:
   m_ObjectHideFlags: 0

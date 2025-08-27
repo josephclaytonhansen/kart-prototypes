@@ -127,18 +127,24 @@ public partial class KartInput : MonoBehaviour
         bool onDeathLayer = CheckGroundOnLayer(kartApex.deathLayer);
         if (onDeathLayer)
         {
+            kartApex.frozen = true;
             onGroundedOnDeathLayer.Invoke(lastGroundedPosition);
-            // Optionally, freeze the kart here or let the receiving method handle it
-            // frozen = true;
             return;
         }
 
         if (isGrounded)
         {
-            // If the kart just became grounded, store this position
+            // If the kart just became grounded, store a safe respawn position.
             if (!wasGrounded)
             {
+                // Start with the current position.
                 lastGroundedPosition = transform.position;
+
+                Vector3 backwardsDirection = -transform.forward;
+                // Subtract a small offset to ensure we don't collide with the ground immediately.
+                lastGroundedPosition = lastGroundedPosition - (backwardsDirection * currentSpeed);
+                // add a small y offset so it's slightly off the ground
+                lastGroundedPosition.y += 1f;
             }
             
             if (currentState != KartState.Grounded)

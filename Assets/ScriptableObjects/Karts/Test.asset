@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::KartData
   maxSpeed: 22
-  weight: 400
+  weight: 300
   acceleration: 25
-  deceleration: 3
+  deceleration: 3.1
   brakeForce: 20
   maxReverseSpeed: 15
   reverseAcceleration: 15
@@ -25,14 +25,13 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  bounceStrength: 10
   jumpForce: 5
   airborneSpeedFactor: 1
   groundContactOffset: 0
   maxSteerAngle: 30
   wheelRadius: 0.5
-  speedDampenOnWallCollision: 0.8
-  wallBounceStrength: 1
+  driftTurnBoost: 1.5
+  driftSlideAmount: 0.1
   chassisMesh: {fileID: 3596191092224140292, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
   chassisTexture: {fileID: 0}
   chassisLocalOffset: {x: 0, y: 0, z: 0}
@@ -49,5 +48,5 @@ MonoBehaviour:
   backRightWheelTexture: {fileID: 0}
   backRightWheelLocalOffset: {x: 0.89018154, y: 0.3608678, z: -0.9157524}
   maxChassisTiltAngle: 12
-  tiltDampening: 5
-  yJitterThreshold: 0.04
+  tiltDampening: 6
+  yJitterThreshold: 0.05

@@ -15,7 +15,6 @@ public class KartApex : MonoBehaviour{
     [Header("Camera Settings")]
     public CinemachineCamera kartCamera;
     public CinemachineCamera lookbackCamera;
-    public CinemachineCamera kartRespawnCamera;
 
     [Header("Kart Components")]
     public Transform leftFrontWheel;
@@ -46,4 +45,12 @@ public class KartApex : MonoBehaviour{
     public int desiredPlacement;
     public Vector3 respawnPoint;
     public int startingPlacement;
+
+    public void RecoverFromDeath(Vector3 lastPosition)
+    {
+        kartRigidbody.position = lastPosition;
+        kartRigidbody.linearVelocity = Vector3.zero;
+        kartRigidbody.angularVelocity = Vector3.zero;
+        frozen = false;
+    }
 }

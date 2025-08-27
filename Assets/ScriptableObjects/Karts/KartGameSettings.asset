@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d290673428e1ea4494e10faef1b5637, type: 3}
   m_Name: KartGameSettings
   m_EditorClassIdentifier: Assembly-CSharp::KartGameSettings
+  slopeInfluence: 0.5
+  minKartWeight: 50
   driftTimeToBlueBoost: 1.5
   driftTimeToOrangeBoost: 2
   tailwindTimeToBoost: 3
@@ -21,11 +23,12 @@ MonoBehaviour:
   landingHeightOffset: 0.1
   collisionLookahead: 0.1
   wallAngleThreshold: 45
-  bounceDuration: 0.5
-  headOnSpeedLoss: 0.95
+  predictiveRaycastWidth: 0.5
+  headOnBounceSpeed: 2
+  glancingBounceFactor: 0.2
   glancingSpeedLoss: 0.2
-  glancingSlideFactor: 0.5
   bounceSafeDistance: 0.2
   jumpForce: 15
   hopGracePeriod: 0.15
   visualHopIntensity: 0.05
+  jumpRayLength: 2

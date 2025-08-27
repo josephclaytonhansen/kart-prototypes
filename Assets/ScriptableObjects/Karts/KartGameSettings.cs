@@ -3,6 +3,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New KartGameSettings", menuName = "Kart/Kart Game Settings")]
 public class KartGameSettings : ScriptableObject
 {
+    [Header("Slope Settings")]
+    public float slopeInfluence = 0.5f;
+    public float minKartWeight = 50f;
+    
     [Header("Drift Settings")]
     public float driftTimeToBlueBoost = 1.5f;
     public float driftTimeToOrangeBoost = 2.0f;

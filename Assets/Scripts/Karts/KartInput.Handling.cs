@@ -78,7 +78,7 @@ public partial class KartInput
             currentSpeed = Mathf.Lerp(currentSpeed, 0, kartApex.kartData.deceleration * Time.fixedDeltaTime);
         }
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
-        float weightInfluence = kartApex.kartData.weight;
+        float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;
         float forwardDotNormal = Vector3.Dot(transform.forward, averagedNormal);
         if (Math.Abs(currentSpeed) > 3f)
         {
@@ -145,7 +145,7 @@ public partial class KartInput
             if (wallAngle > kartApex.kartGameSettings.wallAngleThreshold)
             {
                 currentSpeed = -kartApex.kartGameSettings.headOnBounceSpeed;
-                targetPosition = hitInfo.point + hitInfo.normal * kartApex.kartGameSettings.bounceSafeDistance;
+                targetPosition = hitInfo.point + hitInfo.normal * kartApex.kartGameSettings.bounceSafeDistance * ((kartApex.kartGameSettings.minKartWeight / kartApex.kartData.weight) * 10f);
                 Debug.DrawLine(transform.position, hitInfo.point, Color.red);
             }
             else
