@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.Events;
 using System.Collections.Generic;
 using System;
+using Unity.Cinemachine;
 
 [RequireComponent(typeof(Rigidbody))]
 public class KartInput : MonoBehaviour
@@ -13,6 +14,11 @@ public class KartInput : MonoBehaviour
     public InputAction brakeAction;
     public InputAction trickAction;
     public InputAction driftAction;
+    public InputAction lookBackAction;
+
+    [Header("Camera Settings")]
+    public CinemachineCamera kartCamera;
+    public CinemachineCamera lookbackCamera;
 
     [Header("Kart Components")]
     public Transform leftFrontWheel;
@@ -20,56 +26,21 @@ public class KartInput : MonoBehaviour
     public Transform leftBackWheel;
     public Transform rightBackWheel;
     public KartData kartData;
+    public KartGameSettings kartGameSettings;
     public Rigidbody kartRigidbody;
     public Transform kartVisualsRoot;
     [Tooltip("The BoxCollider used for wall collision detection (drag from Chassis child)")]
     public BoxCollider kartCollider;
 
-    [Header("Drift Settings")]
-    public float driftTurnBoost = 1.5f;
-    public float driftSlideAmount = 0.1f;
-    public float driftTimeToBlueBoost = 1.5f;
-    public float driftTimeToOrangeBoost = 2.0f;
-
     public bool autoDrift = false;
 
     [Header("Tailwind Settings")]
-    public float tailwindTimeToBoost = 3.0f;
-    private bool isTailwinding = false;
     private float tailwindTimer = 0f;
 
     [Header("Jump and Fall Settings")]
-    [Tooltip("Controls the upward force of a player-initiated jump.")]
-    public float jumpForce = 15f;
-    [Tooltip("Time the kart can be airborne on a hop before physics takes over.")]
-    public float hopGracePeriod = 0.15f;
-    [Tooltip("Intensity of the visual hop effect on small bumps.")]
-    public float visualHopIntensity = 0.05f;
-
     private bool isOnRamp = false;
     private bool isPerformingTrick = false;
     private bool isJumping = false;
-
-    [Header("Collision Settings")]
-    public LayerMask selectableLayerMask;
-    [Tooltip("Duration of the bounce animation in seconds")]
-    public float bounceDuration = 0.25f;
-    [Tooltip("Distance ahead to check for collisions based on current speed")]
-    public float collisionLookahead = 0.1f;
-    [Tooltip("Minimum speed deceleration on head-on collision")]
-    public float minCollisionDeceleration = 0.3f;
-    [Tooltip("Maximum speed deceleration on head-on collision")]
-    public float maxCollisionDeceleration = 0.8f;
-    [Tooltip("Minimum bounce distance")]
-    public float minBounceDistance = 0.5f;
-    [Tooltip("Maximum bounce distance")]
-    public float maxBounceDistance = 2.0f;
-    [Tooltip("Safe distance from wall surface")]
-    public float wallSafeDistance = 0.2f;
-    [Tooltip("Angle threshold to determine if surface is a wall (degrees)")]
-    public float wallAngleThreshold = 45f;
-    [Tooltip("Weight range for kart data (min-max)")]
-    public Vector2 weightRange = new Vector2(50f, 500f);
 
     // Collision state variables
     private bool isBouncing = false;
@@ -79,13 +50,6 @@ public class KartInput : MonoBehaviour
     private Quaternion bounceStartRotation;
     private Quaternion bounceTargetRotation;
     private float preCollisionSpeed = 0f;
-
-    [Header("Landing Assist")]
-    public float landingAssistLookahead = 0.5f;
-    public float landingRayLength = 5.0f;
-    public float transitionDuration = 0.2f;
-    [Tooltip("Extra vertical offset added during landing transition to ensure kart lands above the ground.")]
-    public float landingHeightOffset = 0.1f;
 
     [Header("Suspension Visuals")]
     public Transform chassisVisuals;
@@ -143,6 +107,8 @@ public class KartInput : MonoBehaviour
         trickAction.performed += OnTrick;
         driftAction.performed += OnDrift;
         driftAction.canceled += OnDriftCanceled;
+        lookBackAction.performed += OnLookBack;
+        lookBackAction.canceled += OnLookBackCanceled;
 
         kartRigidbody.isKinematic = true;
         kartRigidbody.useGravity = false;
@@ -155,6 +121,26 @@ public class KartInput : MonoBehaviour
         {
             leftFrontWheel, rightFrontWheel, leftBackWheel, rightBackWheel
         };
+    }
+
+    private void OnLookBack(InputAction.CallbackContext context)
+    {
+        Debug.Log("Look Back Activated");
+        if (lookbackCamera != null && kartCamera != null)
+        {
+            lookbackCamera.Priority = 20;
+            kartCamera.Priority = 10;
+        }
+    }
+
+    private void OnLookBackCanceled(InputAction.CallbackContext context)
+    {
+        Debug.Log("Look Back Deactivated");
+        if (lookbackCamera != null && kartCamera != null)
+        {
+            lookbackCamera.Priority = 10;
+            kartCamera.Priority = 20;
+        }
     }
 
     private void OnBrake(InputAction.CallbackContext context)
@@ -192,11 +178,11 @@ public class KartInput : MonoBehaviour
             float driftDuration = driftTimer;
             driftTimer = 0f;
 
-            if (driftDuration >= driftTimeToOrangeBoost && !autoDrift)
+            if (driftDuration >= kartGameSettings.driftTimeToOrangeBoost && !autoDrift)
             {
                 onDriftOrangeBoost.Invoke();
             }
-            else if (driftDuration >= driftTimeToBlueBoost && !autoDrift)
+            else if (driftDuration >= kartGameSettings.driftTimeToBlueBoost && !autoDrift)
             {
                 onDriftBlueBoost.Invoke();
             }
@@ -259,7 +245,7 @@ public class KartInput : MonoBehaviour
     {
         if (!wasGrounded)
         {
-            if (airborneTimer > hopGracePeriod)
+            if (airborneTimer > kartGameSettings.hopGracePeriod)
             {
                 onLanding.Invoke();
             }
@@ -310,7 +296,7 @@ public class KartInput : MonoBehaviour
 
         if (isDrifting || autoDrift)
         {
-            turnAmount *= driftTurnBoost;
+            turnAmount *= kartData.driftTurnBoost;
             driftTimer += Time.fixedDeltaTime;
         }
         targetRotation *= Quaternion.Euler(0, turnAmount, 0);
@@ -360,7 +346,7 @@ public class KartInput : MonoBehaviour
         if (isDrifting || autoDrift)
         {
             Vector3 outwardsAgainstTurn = Vector3.ProjectOnPlane(targetRotation * Vector3.right * -steerInput, averagedNormal).normalized;
-            movementDirection = (forwardOnGround.normalized + outwardsAgainstTurn * driftSlideAmount).normalized;
+            movementDirection = (forwardOnGround.normalized + outwardsAgainstTurn * kartData.driftSlideAmount).normalized;
         }
         else
         {
@@ -418,10 +404,10 @@ public class KartInput : MonoBehaviour
 
     private void CheckForLandingAssist()
     {
-        Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, landingAssistLookahead).normalized;
-        Debug.DrawRay(transform.position, raycastDirection * landingRayLength, Color.red);
+        Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, kartGameSettings.landingAssistLookahead).normalized;
+        Debug.DrawRay(transform.position, raycastDirection * kartGameSettings.landingRayLength, Color.red);
 
-        if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, landingRayLength, kartData.groundLayer) && airborneTimer > hopGracePeriod)
+        if (Physics.Raycast(transform.position, raycastDirection, out landingAssistHit, kartGameSettings.landingRayLength, kartData.groundLayer) && airborneTimer > kartGameSettings.hopGracePeriod)
         {
             if (!isTransitioningToGrounded)
             {
@@ -439,7 +425,7 @@ public class KartInput : MonoBehaviour
         kartRigidbody.Sleep();
         transitionStartPosition = transform.position;
         transitionStartRotation = transform.rotation;
-        float finalOffset = kartData.groundContactOffset + landingHeightOffset;
+        float finalOffset = kartData.groundContactOffset + kartGameSettings.landingHeightOffset;
         targetPosition = landingAssistHit.point + landingAssistHit.normal * finalOffset;
         targetRotation = Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation;
         currentSpeed = kartRigidbody.linearVelocity.magnitude;
@@ -449,7 +435,7 @@ public class KartInput : MonoBehaviour
     private void HandleLandingTransition()
     {
         transitionTimer += Time.fixedDeltaTime;
-        float t = Mathf.Clamp01(transitionTimer / transitionDuration);
+        float t = Mathf.Clamp01(transitionTimer / kartGameSettings.transitionDuration);
         transform.position = Vector3.Lerp(transitionStartPosition, targetPosition, t);
         transform.rotation = Quaternion.Slerp(transitionStartRotation, targetRotation, t);
         if (t >= 1.0f)
@@ -546,7 +532,7 @@ public class KartInput : MonoBehaviour
     private void HandleRampJump()
     {
         isJumping = true;
-        kartRigidbody.AddForce(transform.up * jumpForce, ForceMode.VelocityChange);
+        kartRigidbody.AddForce(transform.up * kartGameSettings.jumpForce, ForceMode.VelocityChange);
         airborneTimer = 0f;
     }
 
@@ -578,6 +564,7 @@ public class KartInput : MonoBehaviour
         brakeAction.Enable();
         trickAction.Enable();
         driftAction.Enable();
+        lookBackAction.Enable();
     }
 
     public void OnDisable()
@@ -587,5 +574,6 @@ public class KartInput : MonoBehaviour
         brakeAction.Disable();
         trickAction.Disable();
         driftAction.Disable();
+        lookBackAction.Disable();
     }
 }

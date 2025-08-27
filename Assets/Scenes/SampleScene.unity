@@ -146,8 +146,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 218681274}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.06077478, y: 0.12148359, z: -0.0074524228, w: 0.9907031}
-  m_LocalPosition: {x: -0.34, y: 0.07999992, z: -14.150001}
+  m_LocalRotation: {x: -0.0049691913, y: -0.07017503, z: 0.00034957932, w: -0.9975223}
+  m_LocalPosition: {x: 0.29, y: 0.56999993, z: -17.59}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -195,10 +195,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
   Damping: {x: 0.5, y: 0.5, z: 0.5}
-  ShoulderOffset: {x: 0.34, y: -0.44, z: -0.57}
-  VerticalArmLength: 2.27
-  CameraSide: 1
-  CameraDistance: -4.84
+  ShoulderOffset: {x: 0.29, y: -0.44, z: -0.85}
+  VerticalArmLength: 2.76
+  CameraSide: 0
+  CameraDistance: -8.56
   AvoidObstacles:
     Enabled: 0
     CollisionFilter:
@@ -310,8 +310,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 381210179}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0068309866, y: 0.99304223, z: -0.09070774, w: -0.07478368}
-  m_LocalPosition: {x: -0.34, y: 0.61, z: -5.1700006}
+  m_LocalRotation: {x: -0.0044321297, y: 0.99381363, z: -0.04306773, w: -0.10227404}
+  m_LocalPosition: {x: -0.34, y: 0.5500001, z: -4.2700005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -716,85 +716,45 @@ MonoBehaviour:
       m_Action: Drift
       m_Flags: 0
     m_Flags: 0
+  lookBackAction:
+    m_Name: Look Back
+    m_Type: 1
+    m_ExpectedControlType: Button
+    m_Id: 07b7688a-fbcd-4457-ba2e-495564df6743
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 76488c43-7e7a-463b-b6a2-7adc106446d8
+      m_Path: <Keyboard>/r
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Look Back
+      m_Flags: 0
+    m_Flags: 0
+  kartCamera: {fileID: 2102789405}
+  lookbackCamera: {fileID: 218681280}
   leftFrontWheel: {fileID: 465710164}
   rightFrontWheel: {fileID: 526674642}
   leftBackWheel: {fileID: 1870191524}
   rightBackWheel: {fileID: 1698632587}
   kartData: {fileID: 11400000, guid: cb324987908ed4840b8eac3b56b09f9d, type: 2}
+  kartGameSettings: {fileID: 11400000, guid: edc0ea04f22357942892e6eb4964ef7f, type: 2}
   kartRigidbody: {fileID: 919132148681321501}
   kartVisualsRoot: {fileID: 1793845977}
   kartCollider: {fileID: 6835908548692531381}
-  driftTurnBoost: 1.5
-  driftSlideAmount: 0.3
-  driftTimeToBlueBoost: 1.5
-  driftTimeToOrangeBoost: 2
   autoDrift: 0
-  tailwindTimeToBoost: 3
-  jumpForce: 15
-  hopGracePeriod: 0.15
-  visualHopIntensity: 0.05
-  selectableLayerMask:
-    serializedVersion: 2
-    m_Bits: 0
-  bounceDuration: 0.25
-  collisionLookahead: 0.1
-  minCollisionDeceleration: 0.3
-  maxCollisionDeceleration: 0.8
-  minBounceDistance: 0.5
-  maxBounceDistance: 2
-  wallSafeDistance: 0.2
-  wallAngleThreshold: 45
-  weightRange: {x: 50, y: 500}
-  landingAssistLookahead: 0.3
-  landingRayLength: 5
-  transitionDuration: 0.5
-  landingHeightOffset: 0.5
   chassisVisuals: {fileID: 317479229480042518}
   onAccelerate:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
-        m_MethodName: set_text
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Accelerate
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onDecelerate:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
-        m_MethodName: set_text
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Decelerate
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onBrake:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
-        m_MethodName: set_text
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Brake
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onSteer:
     m_PersistentCalls:
       m_Calls: []
@@ -809,19 +769,7 @@ MonoBehaviour:
       m_Calls: []
   onDrift:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
-        m_MethodName: set_text
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Drift
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onDriftBlueBoost:
     m_PersistentCalls:
       m_Calls: []
@@ -1063,7 +1011,7 @@ PrefabInstance:
     - target: {fileID: -8536987636328005584, guid: 4aafff8697a61e7419411b1e964f776f, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6780680832682d24798c3f344a03b3c9, type: 2}
+      objectReference: {fileID: -876546973899608171, guid: fbda97fb926d2064ab1b61cc331865de, type: 3}
     - target: {fileID: -5650272105408743144, guid: 4aafff8697a61e7419411b1e964f776f, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -1111,6 +1059,118 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -7295904204182176005, guid: 4aafff8697a61e7419411b1e964f776f, type: 3}
+--- !u!1 &1241407367
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1241407371}
+  - component: {fileID: 1241407370}
+  - component: {fileID: 1241407369}
+  - component: {fileID: 1241407368}
+  m_Layer: 31
+  m_Name: Plane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!64 &1241407368
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241407367}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &1241407369
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241407367}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1241407370
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241407367}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1241407371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241407367}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -43.4, y: -30.6, z: -72.9}
+  m_LocalScale: {x: 31.14, y: 31.14, z: 31.14}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1434769241
 GameObject:
   m_ObjectHideFlags: 0
@@ -1271,8 +1331,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2102789401}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0068309866, y: 0.99304223, z: -0.09070774, w: -0.07478368}
-  m_LocalPosition: {x: -0.34, y: 0.61, z: -5.1700006}
+  m_LocalRotation: {x: -0.0044321297, y: 0.99381363, z: -0.04306773, w: -0.10227404}
+  m_LocalPosition: {x: -0.34, y: 0.5500001, z: -4.2700005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1293,8 +1353,8 @@ MonoBehaviour:
   Composition:
     ScreenPosition: {x: -0.12, y: 0.27}
     DeadZone:
-      Enabled: 1
-      Size: {x: 0.5, y: 0.5}
+      Enabled: 0
+      Size: {x: 0.3, y: 0.3}
     HardLimits:
       Enabled: 1
       Size: {x: 0.8, y: 0.8}
@@ -1319,11 +1379,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 625c14eee3ad46c99df7c7c891ef668a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineThirdPersonFollow
-  Damping: {x: 0.5, y: 0.5, z: 0.5}
+  Damping: {x: 0.5, y: 0.2, z: 0.5}
   ShoulderOffset: {x: 0.34, y: 0.09, z: -0.57}
-  VerticalArmLength: 2.27
+  VerticalArmLength: 2.21
   CameraSide: 1
-  CameraDistance: 4.14
+  CameraDistance: 5.04
   AvoidObstacles:
     Enabled: 0
     CollisionFilter:
@@ -2032,3 +2092,4 @@ SceneRoots:
   - {fileID: 734084224}
   - {fileID: 896947686}
   - {fileID: 766791122}
+  - {fileID: 1241407371}

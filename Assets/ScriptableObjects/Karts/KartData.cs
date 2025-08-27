@@ -82,6 +82,10 @@ public class KartData : ScriptableObject
     [Range(0, 1)]
     public float wallBounceStrength = 0.5f;
 
+    [Header("Drift Settings")]
+    public float driftTurnBoost = 1.5f;
+    public float driftSlideAmount = 0.1f;
+
     [Header("Visual Data")]
     public Mesh chassisMesh;
     public Texture2D chassisTexture;
