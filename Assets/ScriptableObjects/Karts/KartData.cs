@@ -8,6 +8,9 @@ public class KartData : ScriptableObject
     // The maximum forward speed the kart can reach.
     // Higher values make the kart faster.
     public float maxSpeed = 15f;
+
+    // The weight of the kart, which affects collisions and slope slowdown
+    public float weight = 200f;
     
     // The rate at which the kart accelerates to maxSpeed.
     // Higher values make acceleration faster and more snappy.

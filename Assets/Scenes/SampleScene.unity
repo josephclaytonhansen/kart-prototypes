@@ -176,8 +176,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 381210179}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0028668558, y: 0.9933725, z: -0.112058304, w: -0.025414053}
-  m_LocalPosition: {x: -0.34, y: 1.02, z: -3.5600002}
+  m_LocalRotation: {x: -0.0025669085, y: 0.9911288, z: -0.13146327, w: -0.019352455}
+  m_LocalPosition: {x: -0.34, y: 0.5, z: -5.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -386,6 +386,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 101534f90fc651a4cba08461f7b4b6b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  speedLog:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: SetText
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: currentSpeed
+          m_BoolArgument: 0
+        m_CallState: 2
+  turnLog:
+    m_PersistentCalls:
+      m_Calls: []
   steerAction:
     m_Name: Steer
     m_Type: 0
@@ -470,6 +488,23 @@ MonoBehaviour:
       m_Action: Trick
       m_Flags: 0
     m_Flags: 0
+  driftAction:
+    m_Name: Drift
+    m_Type: 1
+    m_ExpectedControlType: Button
+    m_Id: a58e5495-5034-49fb-904d-be3d66ffdafe
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 6ad7343d-435c-4120-bacd-41b6fce5a604
+      m_Path: <Keyboard>/shift
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Drift
+      m_Flags: 0
+    m_Flags: 0
   leftFrontWheel: {fileID: 465710164}
   rightFrontWheel: {fileID: 526674642}
   leftBackWheel: {fileID: 1870191524}
@@ -477,6 +512,12 @@ MonoBehaviour:
   kartData: {fileID: 11400000, guid: cb324987908ed4840b8eac3b56b09f9d, type: 2}
   kartRigidbody: {fileID: 919132148681321501}
   kartVisualsRoot: {fileID: 1793845977}
+  driftTurnBoost: 1.5
+  driftSlideAmount: 0.3
+  driftTimeToBlueBoost: 1.5
+  driftTimeToOrangeBoost: 2
+  autoDrift: 0
+  tailwindTimeToBoost: 3
   jumpForce: 15
   hopGracePeriod: 0.15
   visualHopIntensity: 0.05
@@ -488,13 +529,49 @@ MonoBehaviour:
   kartCollider: {fileID: 6835908548692531381}
   onAccelerate:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Accelerate
+          m_BoolArgument: 0
+        m_CallState: 2
   onDecelerate:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Decelerate
+          m_BoolArgument: 0
+        m_CallState: 2
   onBrake:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Brake
+          m_BoolArgument: 0
+        m_CallState: 2
   onSteer:
     m_PersistentCalls:
       m_Calls: []
@@ -505,6 +582,33 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onWallCollision:
+    m_PersistentCalls:
+      m_Calls: []
+  onDrift:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Drift
+          m_BoolArgument: 0
+        m_CallState: 2
+  onDriftBlueBoost:
+    m_PersistentCalls:
+      m_Calls: []
+  onDriftOrangeBoost:
+    m_PersistentCalls:
+      m_Calls: []
+  onTailwind:
+    m_PersistentCalls:
+      m_Calls: []
+  onTailwindBoost:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &734084223
@@ -538,6 +642,85 @@ Transform:
   m_Children:
   - {fileID: 983228657}
   - {fileID: 381210181}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &766791119
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 766791122}
+  - component: {fileID: 766791121}
+  - component: {fileID: 766791120}
+  m_Layer: 0
+  m_Name: EventSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &766791120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 766791119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
+--- !u!114 &766791121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 766791119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
+  m_FirstSelected: {fileID: 0}
+  m_sendNavigationEvents: 1
+  m_DragThreshold: 10
+--- !u!4 &766791122
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 766791119}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
@@ -1043,27 +1226,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.02
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.5600002
+      value: -5.25
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.025414053
+      value: -0.019352455
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.0028668558
+      value: -0.0025669085
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.9933725
+      value: 0.9911288
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.112058304
+      value: -0.13146327
       objectReference: {fileID: 0}
     - target: {fileID: 4864813911403680097, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -1078,8 +1261,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: Damping.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Damping.y
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: Lookahead.Time
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 5636690454651847958, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Lookahead.Enabled
@@ -1094,6 +1285,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5843177226724112712, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: field of view
+      value: 66.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5843177226724112712, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: m_AllowDynamicResolution
       value: 1
       objectReference: {fileID: 0}
@@ -1106,8 +1301,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 543450653141956262}
     - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: Damping.x
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: Damping.y
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: Damping.z
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: ShoulderOffset.z
+      value: -1.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
+      propertyPath: VerticalArmLength
+      value: 1.97
       objectReference: {fileID: 0}
     - target: {fileID: 8170720931434014610, guid: b0f09cc004e8b6a4d94fccf2773700e5, type: 3}
       propertyPath: AvoidObstacles.Enabled
@@ -1606,3 +1817,4 @@ SceneRoots:
   - {fileID: 543450653141956262}
   - {fileID: 734084224}
   - {fileID: 896947686}
+  - {fileID: 766791122}

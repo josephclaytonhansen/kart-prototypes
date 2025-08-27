@@ -12,13 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f681a2a83f6c5349abea3bf39fa2b71, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::KartData
-  maxSpeed: 20
+  maxSpeed: 22
+  weight: 400
   acceleration: 25
-  deceleration: 1.5
+  deceleration: 3
   brakeForce: 20
   maxReverseSpeed: 15
   reverseAcceleration: 15
-  turnSpeed: 80
+  turnSpeed: 65
   steeringDampenAtMaxSpeed: 0.5
   groundCheckDistance: 1
   groundLayer:
@@ -47,6 +48,6 @@ MonoBehaviour:
   backRightWheelMesh: {fileID: 7505671017961825152, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
   backRightWheelTexture: {fileID: 0}
   backRightWheelLocalOffset: {x: 0.89018154, y: 0.3608678, z: -0.9157524}
-  maxChassisTiltAngle: 10
+  maxChassisTiltAngle: 12
   tiltDampening: 5
-  yJitterThreshold: 0.02
+  yJitterThreshold: 0.04
