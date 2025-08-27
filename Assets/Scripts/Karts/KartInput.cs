@@ -387,13 +387,25 @@ public class KartInput : MonoBehaviour
         float checkDistance = (currentSpeed * Time.fixedDeltaTime) + kartGameSettings.collisionLookahead;
         Vector3 checkDirection = movementDirection;
 
-        // Raycast origins for the sweep
-        Vector3 centerRayOrigin = transform.position;
-        Vector3 leftRayOrigin = transform.position - transform.right * kartGameSettings.predictiveRaycastWidth / 2f;
-        Vector3 rightRayOrigin = transform.position + transform.right * kartGameSettings.predictiveRaycastWidth / 2f;
-
         RaycastHit hitInfo = new RaycastHit();
         bool hitFound = false;
+
+        // Correctly calculate raycast origins relative to the collider's world position,
+        // accounting for its local offset and the kart's rotation.
+        Vector3 colliderWorldCenter = kartCollider.transform.position;
+        Vector3 colliderForward = kartCollider.transform.forward;
+        Vector3 colliderRight = kartCollider.transform.right;
+        Vector3 colliderExtents = kartCollider.size / 2f;
+
+        Vector3 centerRayOrigin = colliderWorldCenter + colliderForward * colliderExtents.z;
+        Vector3 leftRayOrigin = centerRayOrigin - colliderRight * colliderExtents.x;
+        Vector3 rightRayOrigin = centerRayOrigin + colliderRight * colliderExtents.x;
+        
+        // Adjust the origins to be slightly in front of the collider's surface
+        float originOffset = 0.05f; // A small offset to avoid self-intersection
+        centerRayOrigin += checkDirection * originOffset;
+        leftRayOrigin += checkDirection * originOffset;
+        rightRayOrigin += checkDirection * originOffset;
 
         // Perform raycasts and store the first hit found
         if (Physics.Raycast(centerRayOrigin, checkDirection, out hitInfo, checkDistance, kartData.groundLayer))
@@ -518,10 +530,9 @@ public class KartInput : MonoBehaviour
 
     private bool CheckGround()
     {
-        // Use non-allocating raycast method to prevent memory churn.
+        // Use a much more forgiving ground check.
         groundHitCount = 0;
         Vector3 tempAveragedNormal = Vector3.zero;
-        bool backWheelsGrounded = false;
 
         for (int i = 0; i < wheelTransforms.Length; i++)
         {
@@ -530,11 +541,6 @@ public class KartInput : MonoBehaviour
             {
                 tempAveragedNormal += groundHits[groundHitCount].normal;
                 groundHitCount++;
-
-                if (i >= 2)
-                {
-                    backWheelsGrounded = true;
-                }
             }
         }
 
@@ -547,7 +553,7 @@ public class KartInput : MonoBehaviour
             averagedNormal = Vector3.up;
         }
 
-        return groundHitCount >= 3 || (groundHitCount >= 2 && backWheelsGrounded);
+        return groundHitCount > 0;
     }
 
     private void HandleChassisVisuals()
