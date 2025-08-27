@@ -44,6 +44,9 @@ public class KartGameSettings : ScriptableObject
     public float hopGracePeriod = 0.15f;
     [Tooltip("Intensity of the visual hop effect on small bumps.")]
     public float visualHopIntensity = 0.05f;
+    [Tooltip("Distance ahead to check for the end of a jump ramp")]
+    public float jumpRayLength = 2f;
+
 
     public enum BounceType
     {

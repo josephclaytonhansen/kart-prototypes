@@ -1,0 +1,49 @@
+using UnityEngine;
+using Unity.Cinemachine;
+using System.Collections.Generic;
+
+public class KartApex : MonoBehaviour{
+    [Header("Controller")]
+    public bool playerControlled;
+    public CPUKart cpuKart;
+    public KartInput kartInput;
+    public bool controllerActive;
+
+    [Header("Layers")]
+    public LayerMask deathLayer;
+
+    [Header("Camera Settings")]
+    public CinemachineCamera kartCamera;
+    public CinemachineCamera lookbackCamera;
+    public CinemachineCamera kartRespawnCamera;
+
+    [Header("Kart Components")]
+    public Transform leftFrontWheel;
+    public Transform rightFrontWheel;
+    public Transform leftBackWheel;
+    public Transform rightBackWheel;
+    public KartData kartData;
+    
+    public Rigidbody kartRigidbody;
+    public Transform kartVisualsRoot;
+    public BoxCollider kartCollider;
+
+    [Header("Player Settings")]
+    public bool autoDrift = false;
+
+    [Header("Helpers")]
+    public KartMeshUpdate kartMeshUpdate;
+    public KartGameSettings kartGameSettings;
+
+    [Header("Suspension Visuals")]
+    public Transform chassisVisuals;
+
+    [Header("Race Data")]
+    public bool frozen;
+    public int lapCount;
+    public float[] lapTimes;
+    public int trackPlacement;
+    public int desiredPlacement;
+    public Vector3 respawnPoint;
+    public int startingPlacement;
+}

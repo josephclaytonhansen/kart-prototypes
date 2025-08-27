@@ -8,12 +8,15 @@ using Unity.Cinemachine;
 [RequireComponent(typeof(Rigidbody))]
 public partial class KartInput : MonoBehaviour
 {
+    public KartApex kartApex;
     // Define the possible states of the kart's behavior.
     public enum KartState
     {
         Grounded,
         Airborne,
-        // Add more states here as needed, e.g., Stunned, Boosting, etc.
+        Jumping,
+        PerformingTrick,
+        Frozen // New state for when the kart cannot move.
     }
 
     [Header("Input Actions")]
@@ -23,24 +26,6 @@ public partial class KartInput : MonoBehaviour
     public InputAction trickAction;
     public InputAction driftAction;
     public InputAction lookBackAction;
-
-    [Header("Camera Settings")]
-    public CinemachineCamera kartCamera;
-    public CinemachineCamera lookbackCamera;
-
-    [Header("Kart Components")]
-    public Transform leftFrontWheel;
-    public Transform rightFrontWheel;
-    public Transform leftBackWheel;
-    public Transform rightBackWheel;
-    public KartData kartData;
-    public KartGameSettings kartGameSettings;
-    public Rigidbody kartRigidbody;
-    public Transform kartVisualsRoot;
-    [Tooltip("The BoxCollider used for wall collision detection (drag from Chassis child)")]
-    public BoxCollider kartCollider;
-
-    public bool autoDrift = false;
 
     // Internal state variables
     protected float tailwindTimer = 0f;
@@ -82,9 +67,8 @@ public partial class KartInput : MonoBehaviour
     // State Machine
     protected KartState currentState = KartState.Grounded;
 
-    [Header("Suspension Visuals")]
-    public Transform chassisVisuals;
-
+    // New variables for last grounded position and death handling
+    protected Vector3 lastGroundedPosition;
 
     [Header("Events")]
     public UnityEvent onAccelerate;
@@ -99,6 +83,8 @@ public partial class KartInput : MonoBehaviour
     public UnityEvent onDriftOrangeBoost;
     public UnityEvent onTailwind;
     public UnityEvent onTailwindBoost;
+    [Tooltip("Invoked when the kart hits the death layer, sends the last non-death grounded position.")]
+    public UnityEvent<Vector3> onGroundedOnDeathLayer;
 
 
     public void Awake()
@@ -117,36 +103,71 @@ public partial class KartInput : MonoBehaviour
         driftAction.canceled += OnDriftCanceled;
         lookBackAction.performed += OnLookBack;
         lookBackAction.canceled += OnLookBackCanceled;
-        kartRigidbody.isKinematic = true;
-        kartRigidbody.useGravity = false;
+        kartApex.kartRigidbody.isKinematic = true;
+        kartApex.kartRigidbody.useGravity = false;
         targetPosition = transform.position;
         targetRotation = transform.rotation;
         wheelTransforms = new Transform[]
         {
-            leftFrontWheel, rightFrontWheel, leftBackWheel, rightBackWheel
+            kartApex.leftFrontWheel, kartApex.rightFrontWheel, kartApex.leftBackWheel, kartApex.rightBackWheel
         };
     }
 
     void FixedUpdate()
     {
+        if (kartApex.frozen)
+        {
+            return; // Exit FixedUpdate if the kart is frozen
+        }
+        
         wasGrounded = isGrounded;
         isGrounded = CheckGround();
 
+        // Check if the kart is on a death layer
+        bool onDeathLayer = CheckGroundOnLayer(kartApex.deathLayer);
+        if (onDeathLayer)
+        {
+            onGroundedOnDeathLayer.Invoke(lastGroundedPosition);
+            // Optionally, freeze the kart here or let the receiving method handle it
+            // frozen = true;
+            return;
+        }
+
         if (isGrounded)
         {
-            currentState = KartState.Grounded;
+            // If the kart just became grounded, store this position
+            if (!wasGrounded)
+            {
+                lastGroundedPosition = transform.position;
+            }
+            
+            if (currentState != KartState.Grounded)
+            {
+                currentState = KartState.Grounded;
+                if (airborneTimer > kartApex.kartGameSettings.hopGracePeriod)
+                {
+                    onLanding.Invoke();
+                }
+            }
             HandleGroundedMovement();
         }
-        else
+        else // Kart is not on the ground
         {
-            currentState = KartState.Airborne;
+            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick)
+            {
+                currentState = KartState.Airborne;
+            }
             HandleAirborneMovement();
         }
-        CheckForLandingAssist();
     }
 
     void Update()
     {
+        if (kartApex.frozen)
+        {
+            return; // Exit Update if the kart is frozen
+        }
+        
         if (isTransitioningToGrounded)
         {
             HandleLandingTransition();
@@ -163,37 +184,43 @@ public partial class KartInput : MonoBehaviour
     // Input callback methods
     private void OnLookBack(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         Debug.Log("Look Back Activated");
-        if (lookbackCamera != null && kartCamera != null)
+        if (kartApex.lookbackCamera != null && kartApex.kartCamera != null)
         {
-            lookbackCamera.Priority = 20;
-            kartCamera.Priority = 10;
+            kartApex.lookbackCamera.Priority = 20;
+            kartApex.kartCamera.Priority = 10;
         }
     }
     private void OnLookBackCanceled(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         Debug.Log("Look Back Deactivated");
-        if (lookbackCamera != null && kartCamera != null)
+        if (kartApex.lookbackCamera != null && kartApex.kartCamera != null)
         {
-            lookbackCamera.Priority = 10;
-            kartCamera.Priority = 20;
+            kartApex.lookbackCamera.Priority = 10;
+            kartApex.kartCamera.Priority = 20;
         }
     }
     private void OnBrake(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         onBrake.Invoke();
     }
     private void OnSteerCanceled(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         steerInput = 0f;
     }
     public void OnSteer(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         steerInput = context.ReadValue<float>();
         onSteer.Invoke();
     }
     public void OnDrift(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         if (currentState == KartState.Grounded && isAccelerating && steerInput != 0 && !isDrifting)
         {
             isDrifting = true;
@@ -203,16 +230,17 @@ public partial class KartInput : MonoBehaviour
     }
     public void OnDriftCanceled(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         if (isDrifting)
         {
             isDrifting = false;
             float driftDuration = driftTimer;
             driftTimer = 0f;
-            if (driftDuration >= kartGameSettings.driftTimeToOrangeBoost && !autoDrift)
+            if (driftDuration >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift)
             {
                 onDriftOrangeBoost.Invoke();
             }
-            else if (driftDuration >= kartGameSettings.driftTimeToBlueBoost && !autoDrift)
+            else if (driftDuration >= kartApex.kartGameSettings.driftTimeToBlueBoost && !kartApex.autoDrift)
             {
                 onDriftBlueBoost.Invoke();
             }
@@ -220,19 +248,23 @@ public partial class KartInput : MonoBehaviour
     }
     private void OnAcceleratedCanceled(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         isAccelerating = false;
         onDecelerate.Invoke();
     }
     public void OnAccelerate(InputAction.CallbackContext context)
     {
+        if (kartApex.frozen) return;
         isAccelerating = true;
         onAccelerate.Invoke();
     }
     private void OnTrick(InputAction.CallbackContext context)
     {
-        if (isJumping)
+        if (kartApex.frozen) return;
+        // Only allow a trick if the kart is in the Jumping state
+        if (currentState == KartState.Jumping)
         {
-            isPerformingTrick = true;
+            currentState = KartState.PerformingTrick;
             onTrick.Invoke();
         }
     }
@@ -245,14 +277,26 @@ public partial class KartInput : MonoBehaviour
             isOnRamp = true;
         }
     }
+
+    void OnTriggerStay(Collider other)
+    {
+        if (kartApex.frozen) return;
+        // Predictive Jump Takeoff
+        if (isOnRamp && other.CompareTag("JumpRamp"))
+        {
+            Vector3 rayOrigin = transform.position + transform.forward * 0.5f;
+            RaycastHit hit;
+            // Check if the raycast from the front of the kart leaves the ramp
+            if (!Physics.Raycast(rayOrigin, transform.forward, out hit, kartApex.kartGameSettings.jumpRayLength, kartApex.kartData.groundLayer))
+            {
+                HandleRampJump();
+            }
+        }
+    }
+
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("JumpRamp") && isOnRamp)
-        {
-            isOnRamp = false;
-            HandleRampJump();
-        }
-        else
+        if (other.CompareTag("JumpRamp"))
         {
             isOnRamp = false;
         }

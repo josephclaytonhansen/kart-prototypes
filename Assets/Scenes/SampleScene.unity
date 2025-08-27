@@ -615,6 +615,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 101534f90fc651a4cba08461f7b4b6b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  kartApex: {fileID: 919132148681321503}
   steerAction:
     m_Name: Steer
     m_Type: 0
@@ -733,19 +734,6 @@ MonoBehaviour:
       m_Action: Look Back
       m_Flags: 0
     m_Flags: 0
-  kartCamera: {fileID: 2102789405}
-  lookbackCamera: {fileID: 218681280}
-  leftFrontWheel: {fileID: 465710164}
-  rightFrontWheel: {fileID: 526674642}
-  leftBackWheel: {fileID: 1870191524}
-  rightBackWheel: {fileID: 1698632587}
-  kartData: {fileID: 11400000, guid: cb324987908ed4840b8eac3b56b09f9d, type: 2}
-  kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
-  kartRigidbody: {fileID: 919132148681321501}
-  kartVisualsRoot: {fileID: 1793845977}
-  kartCollider: {fileID: 6835908548692531381}
-  autoDrift: 0
-  chassisVisuals: {fileID: 317479229480042518}
   onAccelerate:
     m_PersistentCalls:
       m_Calls: []
@@ -780,6 +768,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onTailwindBoost:
+    m_PersistentCalls:
+      m_Calls: []
+  onGroundedOnDeathLayer:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &734084223
@@ -1304,6 +1295,58 @@ Transform:
   - {fileID: 8654310093125031964}
   m_Father: {fileID: 1793845977}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1910541942
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1910541944}
+  - component: {fileID: 1910541943}
+  m_Layer: 0
+  m_Name: KartManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1910541943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910541942}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fab1ff2a149357409f8e5db23705c8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KartManager
+  karts:
+  - {fileID: 919132148681321503}
+  kartInputs:
+  - {fileID: 565054161}
+  cpuKarts: []
+  kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
+  trackPlacements: 
+  totalLaps: 0
+--- !u!4 &1910541944
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910541942}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2102789401
 GameObject:
   m_ObjectHideFlags: 0
@@ -1538,9 +1581,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 543450653141956262}
+  - component: {fileID: 919132148681321503}
   - component: {fileID: 565054161}
-  - component: {fileID: 919132148681321501}
   - component: {fileID: 919132148681321502}
+  - component: {fileID: 919132148681321501}
   m_Layer: 0
   m_Name: kart
   m_TagString: Untagged
@@ -1593,6 +1637,41 @@ MonoBehaviour:
   frontRightWheelPivot: {fileID: 526674642}
   backLeftWheelPivot: {fileID: 1870191524}
   backRightWheelPivot: {fileID: 1698632587}
+--- !u!114 &919132148681321503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148681321500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bcfb1399e7b829498e869304e1f71dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KartApex
+  playerControlled: 1
+  cpuKart: {fileID: 0}
+  kartInput: {fileID: 565054161}
+  frozen: 0
+  respawnPoint: {x: 0, y: 0, z: 0}
+  deathLayer:
+    serializedVersion: 2
+    m_Bits: 2147483648
+  kartCamera: {fileID: 2102789405}
+  lookbackCamera: {fileID: 218681280}
+  kartRespawnCamera: {fileID: 0}
+  leftFrontWheel: {fileID: 465710164}
+  rightFrontWheel: {fileID: 526674642}
+  leftBackWheel: {fileID: 1870191524}
+  rightBackWheel: {fileID: 1698632587}
+  kartData: {fileID: 11400000, guid: cb324987908ed4840b8eac3b56b09f9d, type: 2}
+  kartRigidbody: {fileID: 919132148681321501}
+  kartVisualsRoot: {fileID: 1793845977}
+  kartCollider: {fileID: 6835908548692531381}
+  autoDrift: 0
+  kartMeshUpdate: {fileID: 919132148681321502}
+  kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
+  chassisVisuals: {fileID: 317479229480042518}
 --- !u!1 &1035127029122512773
 GameObject:
   m_ObjectHideFlags: 0
@@ -2093,3 +2172,4 @@ SceneRoots:
   - {fileID: 896947686}
   - {fileID: 766791122}
   - {fileID: 1241407371}
+  - {fileID: 1910541944}
