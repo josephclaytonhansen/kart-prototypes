@@ -97,4 +97,18 @@ public class KartData : ScriptableObject
     public float maxChassisTiltAngle = 10f;
     public float tiltDampening = 5f;
     public float yJitterThreshold = 0.01f;
+
+    [Header("Terrain Settings")]
+    public float iceFriction = 0.8f;
+    public float mudFriction = 0.6f;
+    public float sandFriction = 0.4f;
+    public float offRoadFriction = 0.5f;
+    public float iceSteer = 1.2f;
+    public float mudSteer = 1f;
+    public float sandSteer = 0.75f;
+    public float offRoadSteer = 0.9f;
+    public float iceDrift = 1.5f;
+    public float mudDrift = 1f;
+    public float sandDrift = 0.7f;
+    public float offRoadDrift = 0.9f;
 }

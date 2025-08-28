@@ -19,6 +19,17 @@ public partial class KartInput : MonoBehaviour
         Frozen // New state for when the kart cannot move.
     }
 
+    public enum TerrainType{
+        Mud,
+        Ground,
+        Ice,
+        Sand,
+        Death,
+        OffRoad
+    }
+
+    public TerrainType terrainType;
+
     [Header("Input Actions")]
     public InputAction steerAction;
     public InputAction accelerateAction;

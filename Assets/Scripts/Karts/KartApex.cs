@@ -11,6 +11,11 @@ public class KartApex : MonoBehaviour{
 
     [Header("Layers")]
     public LayerMask deathLayer;
+    public LayerMask iceLayer;
+    public LayerMask mudLayer;
+    public LayerMask sandLayer;
+    public LayerMask offRoadLayer;
+    public LayerMask allTerrainLayers; 
 
     [Header("Camera Settings")]
     public CinemachineCamera kartCamera;
