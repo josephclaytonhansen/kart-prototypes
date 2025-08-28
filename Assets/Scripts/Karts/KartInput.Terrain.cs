@@ -4,60 +4,53 @@ using System.Collections.Generic;
 
 public partial class KartInput
 {
-    
-    private void GetTerrainType(RaycastHit[] hits)
+    void Start()
     {
-        bool foundIce = false, foundMud = false, foundSand = false, foundOffRoad = false, foundDeath = false;
-        
-        // Debug: Log what each wheel is hitting
-        for (int i = 0; i < hits.Length; i++)
+        // Initialize terrain zone counters
+        foreach (TerrainType terrainType in System.Enum.GetValues(typeof(TerrainType)))
         {
-            RaycastHit hit = hits[i];
-            if (hit.collider != null)
-            {
-                Debug.Log($"Wheel {i}: Hit {hit.collider.name} on layer {hit.collider.gameObject.layer} at distance {hit.distance}");
-            }
+            activeTerrainZones[terrainType] = 0;
         }
-        
-        // Check each wheel's hit (these should be the closest hits per wheel from CheckGround)
-        for (int i = 0; i < hits.Length; i++)
+    }
+    
+    // These methods will be integrated into the existing OnTriggerEnter/Exit in main KartInput.cs
+    
+    private TerrainType GetTerrainTypeFromTag(string tag)
+    {
+        switch (tag)
         {
-            RaycastHit hit = hits[i];
-            if (hit.collider == null) continue;
-            
-            int layer = hit.collider.gameObject.layer;
-            
-            // Check in priority order - first match wins for this wheel
-            if (((1 << layer) & kartApex.iceLayer) != 0)
-                foundIce = true;
-            else if (((1 << layer) & kartApex.mudLayer) != 0)
-                foundMud = true;
-            else if (((1 << layer) & kartApex.sandLayer) != 0)
-                foundSand = true;
-            else if (((1 << layer) & kartApex.offRoadLayer) != 0)
-                foundOffRoad = true;
-            else if (((1 << layer) & kartApex.deathLayer) != 0)
-                foundDeath = true;
+            case "TerrainMud": return TerrainType.Mud;
+            case "TerrainIce": return TerrainType.Ice;
+            case "TerrainSand": return TerrainType.Sand;
+            case "TerrainDeath": return TerrainType.Death;
+            case "TerrainOffRoad": return TerrainType.OffRoad;
+            default: return TerrainType.Ground;
         }
-        
-        // Overall priority: non-death terrain types first, death only if no other terrain found
-        if (foundIce)
-            terrainType = TerrainType.Ice;
-        else if (foundMud)
-            terrainType = TerrainType.Mud;
-        else if (foundSand)
-            terrainType = TerrainType.Sand;
-        else if (foundOffRoad)
-            terrainType = TerrainType.OffRoad;
-        else if (foundDeath)
+    }
+    
+    private void UpdateCurrentTerrainType()
+    {
+        // Priority order: Death > Ice > Mud > Sand > OffRoad > Ground
+        if (activeTerrainZones[TerrainType.Death] > 0)
             terrainType = TerrainType.Death;
+        else if (activeTerrainZones[TerrainType.Ice] > 0)
+            terrainType = TerrainType.Ice;
+        else if (activeTerrainZones[TerrainType.Mud] > 0)
+            terrainType = TerrainType.Mud;
+        else if (activeTerrainZones[TerrainType.Sand] > 0)
+            terrainType = TerrainType.Sand;
+        else if (activeTerrainZones[TerrainType.OffRoad] > 0)
+            terrainType = TerrainType.OffRoad;
         else
             terrainType = TerrainType.Ground;
             
-        Debug.Log($"Final terrain type: {terrainType}");
+        Debug.Log($"Terrain updated to: {terrainType}");
     }
-
-    private float handleTerrainSpeed(float currentSpeed)
+    
+    // Remove the old ground-based terrain detection methods
+    // Keep the terrain effect methods but make them public so they can be called from HandleDriving/HandleSteering
+    
+    public float HandleTerrainSpeed(float currentSpeed)
     {
         float modifiedSpeed = currentSpeed;
         switch (terrainType)
@@ -80,7 +73,8 @@ public partial class KartInput
         return modifiedSpeed;
     }
 
-    private float handleTerrainSteer(float steer){
+    public float HandleTerrainSteer(float steer)
+    {
         float modifiedSteer = steer;
         switch (terrainType)
         {
@@ -102,7 +96,7 @@ public partial class KartInput
         return modifiedSteer;
     }
 
-    private float handleTerrainDrift(float drift)
+    public float HandleTerrainDrift(float drift)
     {
         float modifiedDrift = drift;
         switch (terrainType)

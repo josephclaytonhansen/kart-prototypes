@@ -47,12 +47,21 @@ public partial class KartInput
         {
             effectiveSteeringFactor = Mathf.Lerp(1, kartApex.kartData.steeringDampenAtMaxSpeed, (absoluteSpeed - kartApex.kartData.maxSpeed / 2f) / (kartApex.kartData.maxSpeed - kartApex.kartData.maxSpeed / 2f));
         }
+        
+        // Calculate base turn amount
         float turnAmount = steerInput * kartApex.kartData.turnSpeed * effectiveSteeringFactor * Time.fixedDeltaTime;
+        
+        // Apply terrain steering modification
+        turnAmount = HandleTerrainSteer(turnAmount);
+        
         if (isDrifting || kartApex.autoDrift)
         {
-            turnAmount *= kartApex.kartData.driftTurnBoost;
+            // Apply terrain drift modification to the drift boost
+            float driftBoost = HandleTerrainDrift(kartApex.kartData.driftTurnBoost);
+            turnAmount *= driftBoost;
             driftTimer += Time.fixedDeltaTime;
         }
+        
         targetRotation *= Quaternion.Euler(0, turnAmount, 0);
     }
 
@@ -77,6 +86,10 @@ public partial class KartInput
         {
             currentSpeed = Mathf.Lerp(currentSpeed, 0, kartApex.kartData.deceleration * Time.fixedDeltaTime);
         }
+        
+        // Apply terrain speed modification
+        currentSpeed = HandleTerrainSpeed(currentSpeed);
+        
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
         float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;
         float forwardDotNormal = Vector3.Dot(transform.forward, averagedNormal);

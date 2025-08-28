@@ -75,6 +75,9 @@ public partial class KartInput : MonoBehaviour
     protected Transform[] wheelTransforms;
     private List<InputAction> allActions;
 
+    // Terrain tracking
+    protected Dictionary<TerrainType, int> activeTerrainZones = new Dictionary<TerrainType, int>();
+
     // State Machine
     protected KartState currentState = KartState.Grounded;
 
@@ -122,6 +125,12 @@ public partial class KartInput : MonoBehaviour
         {
             kartApex.leftFrontWheel, kartApex.rightFrontWheel, kartApex.leftBackWheel, kartApex.rightBackWheel
         };
+
+        // Initialize terrain zone counters
+        foreach (TerrainType terrainType in System.Enum.GetValues(typeof(TerrainType)))
+        {
+            activeTerrainZones[terrainType] = 0;
+        }
     }
 
     void FixedUpdate()
@@ -292,6 +301,15 @@ public partial class KartInput : MonoBehaviour
         if (other.CompareTag("JumpRamp"))
         {
             isOnRamp = true;
+            return;
+        }
+        
+        // Check for terrain zone triggers
+        TerrainType detectedTerrain = GetTerrainTypeFromTag(other.tag);
+        if (detectedTerrain != TerrainType.Ground)
+        {
+            activeTerrainZones[detectedTerrain]++;
+            UpdateCurrentTerrainType();
         }
     }
 
@@ -316,6 +334,15 @@ public partial class KartInput : MonoBehaviour
         if (other.CompareTag("JumpRamp"))
         {
             isOnRamp = false;
+            return;
+        }
+        
+        // Check for terrain zone triggers  
+        TerrainType detectedTerrain = GetTerrainTypeFromTag(other.tag);
+        if (detectedTerrain != TerrainType.Ground)
+        {
+            activeTerrainZones[detectedTerrain] = Mathf.Max(0, activeTerrainZones[detectedTerrain] - 1);
+            UpdateCurrentTerrainType();
         }
     }
 

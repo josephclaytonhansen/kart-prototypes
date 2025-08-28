@@ -49,4 +49,16 @@ MonoBehaviour:
   backRightWheelLocalOffset: {x: 0.89018154, y: 0.3608678, z: -0.9157524}
   maxChassisTiltAngle: 12
   tiltDampening: 6
-  yJitterThreshold: 0.05
+  yJitterThreshold: 0.08
+  iceFriction: 0.8
+  mudFriction: 0.6
+  sandFriction: 0.4
+  offRoadFriction: 0.5
+  iceSteer: 1.2
+  mudSteer: 1
+  sandSteer: 0.75
+  offRoadSteer: 0.9
+  iceDrift: 1.5
+  mudDrift: 1
+  sandDrift: 0.7
+  offRoadDrift: 0.9
