@@ -266,15 +266,20 @@ public partial class KartInput
     {
         groundHitCount = 0;
         Vector3 tempAveragedNormal = Vector3.zero;
+        
         for (int i = 0; i < wheelTransforms.Length; i++)
         {
+            // Use a consistent downward direction for ground checking regardless of kart orientation
             Vector3 raycastOrigin = wheelTransforms[i].position - transform.up * kartApex.kartData.groundContactOffset;
-            if (Physics.Raycast(raycastOrigin, -transform.up, out groundHits[groundHitCount], kartApex.kartData.groundCheckDistance, kartApex.kartData.groundLayer))
+            Vector3 raycastDirection = Vector3.down; // Always cast straight down in world space
+            
+            if (Physics.Raycast(raycastOrigin, raycastDirection, out groundHits[groundHitCount], kartApex.kartData.groundCheckDistance, kartApex.kartData.groundLayer))
             {
                 tempAveragedNormal += groundHits[groundHitCount].normal;
                 groundHitCount++;
             }
         }
+        
         if (groundHitCount > 0)
         {
             averagedNormal = tempAveragedNormal.normalized;
@@ -283,6 +288,7 @@ public partial class KartInput
         {
             averagedNormal = Vector3.up;
         }
+        
         return groundHitCount > 0;
     }
 
@@ -292,7 +298,7 @@ public partial class KartInput
         for (int i = 0; i < wheelTransforms.Length; i++)
         {
             Vector3 raycastOrigin = wheelTransforms[i].position;
-            if (Physics.Raycast(raycastOrigin, -transform.up, 1f, layer))
+            if (Physics.Raycast(raycastOrigin, Vector3.down, 1f, layer)) // Use Vector3.down here too
             {
                 return true;
             }
