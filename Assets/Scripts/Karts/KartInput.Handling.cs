@@ -88,6 +88,44 @@ public partial class KartInput
     {
         if (isAccelerating)
         {
+        if (!kartLongBoosted && !kartShortBoosted){
+            oldMaxSpeed = kartApex.kartData.maxSpeed;
+            oldAccel = kartApex.kartData.acceleration;
+        }
+
+        if (kartLongBoosted)
+        {
+            
+            kartApex.kartData.maxSpeed = kartApex.kartData.maxBoostedSpeed;
+            
+            kartApex.kartData.acceleration = 100;
+            boostTimer += Time.fixedDeltaTime;
+            if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
+            {
+                kartLongBoosted = false;
+                boostTimer = 0f;
+                kartApex.kartData.maxSpeed = oldMaxSpeed;
+                kartApex.kartData.acceleration = oldAccel;
+                kartApex.BL_particleSystem.SetActive(false);
+                kartApex.BR_particleSystem.SetActive(false);
+            }
+        }
+
+        else if (kartShortBoosted)
+        {
+            kartApex.kartData.maxSpeed = kartApex.kartData.maxBoostedSpeed;
+            kartApex.kartData.acceleration = 100;
+            boostTimer += Time.fixedDeltaTime;
+            if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
+            {
+                kartShortBoosted = false;
+                boostTimer = 0f;
+                kartApex.kartData.maxSpeed = oldMaxSpeed;
+                kartApex.kartData.acceleration = oldAccel;
+                kartApex.BR_particleSystem.SetActive(false);
+                kartApex.BL_particleSystem.SetActive(false);
+            }
+        }
             currentSpeed = Mathf.Lerp(currentSpeed, kartApex.kartData.maxSpeed, kartApex.kartData.acceleration * Time.fixedDeltaTime);
         }
         else if (brakeAction.IsPressed())
@@ -108,28 +146,6 @@ public partial class KartInput
         
         // Apply terrain speed modification
         currentSpeed = HandleTerrainSpeed(currentSpeed);
-
-        if (kartLongBoosted)
-        {
-            currentSpeed *= kartApex.kartGameSettings.boostMultiplier;
-            boostTimer += Time.fixedDeltaTime;
-            if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
-            {
-                kartLongBoosted = false;
-                boostTimer = 0f;
-            }
-        }
-
-        else if (kartShortBoosted)
-        {
-            currentSpeed *= kartApex.kartGameSettings.boostMultiplier;
-            boostTimer += Time.fixedDeltaTime;
-            if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
-            {
-                kartShortBoosted = false;
-                boostTimer = 0f;
-            }
-        }
 
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
         float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;

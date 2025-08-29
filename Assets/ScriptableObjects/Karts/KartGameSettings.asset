@@ -14,11 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KartGameSettings
   slopeInfluence: 0.5
   minKartWeight: 50
-  driftTimeToBlueBoost: 1.4
-  driftTimeToOrangeBoost: 2.3
+  driftTimeToBlueBoost: 1.3
+  driftTimeToOrangeBoost: 2.4
   shortBoostDuration: 0.5
   longBoostDuration: 1
-  boostMultiplier: 1.5
   tailwindTimeToBoost: 3
   tailwindBoostMultiplier: 1.3
   landingAssistLookahead: 0.5

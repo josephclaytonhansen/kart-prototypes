@@ -48,6 +48,8 @@ public partial class KartInput : MonoBehaviour
     protected bool isJumping = false;
     protected bool isBouncing = false;
     protected float bounceTimer = 0f;
+    protected float oldMaxSpeed;
+    protected float oldAccel;
     protected Vector3 bounceStartPosition;
     protected Vector3 bounceTargetPosition;
     protected Quaternion bounceStartRotation;
@@ -263,8 +265,6 @@ public partial class KartInput : MonoBehaviour
         if (kartApex.frozen) return;
         if (isDrifting)
         {
-            kartApex.BL_particleSystem.SetActive(false);
-            kartApex.BR_particleSystem.SetActive(false);
             isDrifting = false;
             float driftDuration = driftTimer;
             driftTimer = 0f;

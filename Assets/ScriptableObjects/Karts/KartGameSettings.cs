@@ -14,7 +14,6 @@ public class KartGameSettings : ScriptableObject
     [Header("Boost Settings")]
     public float shortBoostDuration = 1.0f;
     public float longBoostDuration = 2.0f;
-    public float boostMultiplier = 1.75f;
 
     [Header("Tailwind Settings")]
     public float tailwindTimeToBoost = 3.0f;
