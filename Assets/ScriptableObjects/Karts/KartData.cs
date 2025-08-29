@@ -99,6 +99,11 @@ public class KartData : ScriptableObject
     public float tiltDampening = 5f;
     public float yJitterThreshold = 0.01f;
 
+    public Vector3 leftDriftParticleLocation;
+    public Vector3 rightDriftParticleLocation;
+
+    public Vector3[] exhaustParticleLocation;
+
     [Header("Terrain Settings")]
     public float iceFriction = 0.8f;
     public float mudFriction = 0.6f;

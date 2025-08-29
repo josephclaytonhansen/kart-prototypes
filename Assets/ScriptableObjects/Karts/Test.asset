@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f681a2a83f6c5349abea3bf39fa2b71, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::KartData
-  maxSpeed: 25
-  maxBoostedSpeed: 100
+  maxSpeed: 20
+  maxBoostedSpeed: 60
   weight: 300
   acceleration: 15
   deceleration: 3.1
@@ -32,7 +32,7 @@ MonoBehaviour:
   maxSteerAngle: 30
   wheelRadius: 0.5
   driftTurnBoost: 1.5
-  driftSlideAmount: 0.1
+  driftSlideAmount: 0.15
   chassisMesh: {fileID: 3596191092224140292, guid: 3ee5ac70ad485de439d5159b5b4ecb40, type: 3}
   chassisTexture: {fileID: 0}
   chassisLocalOffset: {x: 0, y: 0, z: 0}
@@ -51,6 +51,11 @@ MonoBehaviour:
   maxChassisTiltAngle: 12
   tiltDampening: 6
   yJitterThreshold: 0.08
+  leftDriftParticleLocation: {x: -0.58285105, y: 0.31145358, z: -0.8847456}
+  rightDriftParticleLocation: {x: 0.83, y: 0.31145358, z: -0.8847456}
+  exhaustParticleLocation:
+  - {x: -0.463, y: 0.817, z: -1.418}
+  - {x: 0.486, y: 0.854, z: -1.396}
   iceFriction: 0.8
   mudFriction: 0.6
   sandFriction: 0.4

@@ -284,6 +284,13 @@ public partial class KartInput : MonoBehaviour
     {
         if (kartApex.frozen) return;
         isAccelerating = false;
+        if (isDrifting)
+        {
+            kartApex.BL_particleSystem.SetActive(false);
+            kartApex.BR_particleSystem.SetActive(false);
+            isDrifting = false;
+            driftTimer = 0f;
+        }
         onDecelerate.Invoke();
     }
     public void OnAccelerate(InputAction.CallbackContext context)
