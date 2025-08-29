@@ -56,10 +56,29 @@ public partial class KartInput
         
         if (isDrifting || kartApex.autoDrift)
         {
+            Debug.Log(driftTimer);
             // Apply terrain drift modification to the drift boost
             float driftBoost = HandleTerrainDrift(kartApex.kartData.driftTurnBoost);
             turnAmount *= driftBoost;
             driftTimer += Time.fixedDeltaTime;
+
+            ParticleSystem lps = kartApex.BL_particleSystem.GetComponent<ParticleSystem>();
+            ParticleSystem rps = kartApex.BR_particleSystem.GetComponent<ParticleSystem>();
+
+            if (driftTimer >= kartApex.kartGameSettings.driftTimeToBlueBoost && !kartApex.autoDrift)
+            {
+                kartApex.BL_particleSystem.SetActive(true);
+                kartApex.BR_particleSystem.SetActive(true);
+                
+                lps.startColor = new Color(0f, 0.7f, 1f);
+                rps.startColor = new Color(0f, 0.7f, 1f);
+            }
+
+            if (driftTimer >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift){
+
+                lps.startColor = new Color(1f, 0.7f, 0f);
+                rps.startColor = new Color(1f, 0.7f, 0f);
+            } 
         }
         
         targetRotation *= Quaternion.Euler(0, turnAmount, 0);
@@ -89,7 +108,29 @@ public partial class KartInput
         
         // Apply terrain speed modification
         currentSpeed = HandleTerrainSpeed(currentSpeed);
-        
+
+        if (kartLongBoosted)
+        {
+            currentSpeed *= kartApex.kartGameSettings.boostMultiplier;
+            boostTimer += Time.fixedDeltaTime;
+            if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
+            {
+                kartLongBoosted = false;
+                boostTimer = 0f;
+            }
+        }
+
+        else if (kartShortBoosted)
+        {
+            currentSpeed *= kartApex.kartGameSettings.boostMultiplier;
+            boostTimer += Time.fixedDeltaTime;
+            if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
+            {
+                kartShortBoosted = false;
+                boostTimer = 0f;
+            }
+        }
+
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
         float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;
         float forwardDotNormal = Vector3.Dot(transform.forward, averagedNormal);
@@ -352,5 +393,15 @@ public partial class KartInput
         airborneTimer = 0f;
         // The state is now explicitly set to Jumping
         currentState = KartState.Jumping;
+    }
+
+    public void StartShortBoost(){
+        kartShortBoosted = true;
+        boostTimer = 0f;
+    }
+
+    public void StartLongBoost(){
+        kartLongBoosted = true;
+        boostTimer = 0f;
     }
 }

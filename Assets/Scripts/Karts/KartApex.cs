@@ -22,7 +22,10 @@ public class KartApex : MonoBehaviour{
     public Transform leftBackWheel;
     public Transform rightBackWheel;
     public KartData kartData;
-    
+
+    [Header("Visual Components")]
+    public GameObject BL_particleSystem;
+    public GameObject BR_particleSystem;
     public Rigidbody kartRigidbody;
     public Transform kartVisualsRoot;
     public BoxCollider kartCollider;

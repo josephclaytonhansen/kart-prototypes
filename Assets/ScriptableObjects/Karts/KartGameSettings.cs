@@ -11,8 +11,14 @@ public class KartGameSettings : ScriptableObject
     public float driftTimeToBlueBoost = 1.5f;
     public float driftTimeToOrangeBoost = 2.0f;
 
+    [Header("Boost Settings")]
+    public float shortBoostDuration = 1.0f;
+    public float longBoostDuration = 2.0f;
+    public float boostMultiplier = 1.75f;
+
     [Header("Tailwind Settings")]
     public float tailwindTimeToBoost = 3.0f;
+    public float tailwindBoostMultiplier = 1.3f;
 
     [Header("Landing Assist")]
     public float landingAssistLookahead = 0.5f;

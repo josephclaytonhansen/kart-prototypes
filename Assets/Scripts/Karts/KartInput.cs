@@ -40,6 +40,9 @@ public partial class KartInput : MonoBehaviour
 
     // Internal state variables
     protected float tailwindTimer = 0f;
+    protected float boostTimer = 0f;
+    protected bool kartLongBoosted = false;
+    protected bool kartShortBoosted = false;
     protected bool isOnRamp = false;
     protected bool isPerformingTrick = false;
     protected bool isJumping = false;
@@ -253,21 +256,26 @@ public partial class KartInput : MonoBehaviour
             driftTimer = 0f;
             onDrift.Invoke();
         }
+        
     }
     public void OnDriftCanceled(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
         if (isDrifting)
         {
+            kartApex.BL_particleSystem.SetActive(false);
+            kartApex.BR_particleSystem.SetActive(false);
             isDrifting = false;
             float driftDuration = driftTimer;
             driftTimer = 0f;
             if (driftDuration >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift)
             {
+                Debug.Log("Orange drift boost");
                 onDriftOrangeBoost.Invoke();
             }
             else if (driftDuration >= kartApex.kartGameSettings.driftTimeToBlueBoost && !kartApex.autoDrift)
             {
+                Debug.Log("Blue drift boost");
                 onDriftBlueBoost.Invoke();
             }
         }
