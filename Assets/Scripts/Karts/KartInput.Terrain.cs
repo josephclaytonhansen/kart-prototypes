@@ -31,8 +31,11 @@ public partial class KartInput
     private void UpdateCurrentTerrainType()
     {
         // Priority order: Death > Ice > Mud > Sand > OffRoad > Ground
-        if (activeTerrainZones[TerrainType.Death] > 0)
+        if (activeTerrainZones[TerrainType.Death] > 0){
             terrainType = TerrainType.Death;
+            kartApex.frozen = true;
+            onGroundedOnDeathLayer.Invoke(lastGroundedPosition);
+        }
         else if (activeTerrainZones[TerrainType.Ice] > 0)
             terrainType = TerrainType.Ice;
         else if (activeTerrainZones[TerrainType.Mud] > 0)

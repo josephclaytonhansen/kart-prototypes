@@ -6,6 +6,7 @@ TagManager:
   tags:
   - TerrainSand
   - TerrainMud
+  - TerrainDeath
   layers:
   - Default
   - TransparentFX
