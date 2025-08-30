@@ -11,9 +11,10 @@ public partial class KartInput
         {
             activeTerrainZones[terrainType] = 0;
         }
+        
+        // Initialize previous terrain type
+        previousTerrainType = TerrainType.Ground;
     }
-    
-    // These methods will be integrated into the existing OnTriggerEnter/Exit in main KartInput.cs
     
     private TerrainType GetTerrainTypeFromTag(string tag)
     {
@@ -30,95 +31,191 @@ public partial class KartInput
     
     private void UpdateCurrentTerrainType()
     {
+        TerrainType newTerrainType;
+        
         // Priority order: Death > Ice > Mud > Sand > OffRoad > Ground
         if (activeTerrainZones[TerrainType.Death] > 0){
-            terrainType = TerrainType.Death;
-            kartApex.frozen = true;
-            onGroundedOnDeathLayer.Invoke(lastGroundedPosition);
+            newTerrainType = TerrainType.Death;
+            // Death handling is now done in FixedUpdate, not here
+            Debug.Log("Death terrain zone detected");
         }
         else if (activeTerrainZones[TerrainType.Ice] > 0)
-            terrainType = TerrainType.Ice;
+            newTerrainType = TerrainType.Ice;
         else if (activeTerrainZones[TerrainType.Mud] > 0)
-            terrainType = TerrainType.Mud;
+            newTerrainType = TerrainType.Mud;
         else if (activeTerrainZones[TerrainType.Sand] > 0)
-            terrainType = TerrainType.Sand;
+            newTerrainType = TerrainType.Sand;
         else if (activeTerrainZones[TerrainType.OffRoad] > 0)
-            terrainType = TerrainType.OffRoad;
+            newTerrainType = TerrainType.OffRoad;
         else
-            terrainType = TerrainType.Ground;
+            newTerrainType = TerrainType.Ground;
+        
+        // Only update if terrain actually changed
+        if (newTerrainType != terrainType)
+        {
+            Debug.Log($"Terrain changing from {terrainType} to {newTerrainType}");
+            previousTerrainType = terrainType;
+            terrainType = newTerrainType;
             
-        Debug.Log($"Terrain updated to: {terrainType}");
+            // Start terrain change smoothing to prevent jitter
+            terrainChangeSmoothing = TERRAIN_CHANGE_SMOOTHING_DURATION;
+        }
     }
     
-    // Remove the old ground-based terrain detection methods
-    // Keep the terrain effect methods but make them public so they can be called from HandleDriving/HandleSteering
+        // New helper methods for smooth terrain transitions
+    private float GetTerrainSpeedMultiplier()
+    {
+        float baseMultiplier = 1f;
+        switch (terrainType)
+        {
+            case TerrainType.Ground:
+                baseMultiplier = 1f;
+                break;
+            case TerrainType.Ice:
+                baseMultiplier = kartApex.kartData.iceFriction;
+                break;
+            case TerrainType.Mud:
+                baseMultiplier = kartApex.kartData.mudFriction;
+                break;
+            case TerrainType.Sand:
+                baseMultiplier = kartApex.kartData.sandFriction;
+                break;
+            case TerrainType.OffRoad:
+                baseMultiplier = kartApex.kartData.offRoadFriction;
+                break;
+        }
+        
+        // Apply smoothing during terrain changes
+        if (terrainChangeSmoothing > 0f)
+        {
+            float previousMultiplier = GetPreviousTerrainSpeedMultiplier();
+            float t = 1f - (terrainChangeSmoothing / TERRAIN_CHANGE_SMOOTHING_DURATION);
+            baseMultiplier = Mathf.Lerp(previousMultiplier, baseMultiplier, t);
+        }
+        
+        return baseMultiplier;
+    }
     
-    public float HandleTerrainSpeed(float currentSpeed)
+    private float GetTerrainSteerMultiplier()
     {
-        float modifiedSpeed = currentSpeed;
+        float baseMultiplier = 1f;
         switch (terrainType)
         {
             case TerrainType.Ground:
+                baseMultiplier = 1f;
                 break;
             case TerrainType.Ice:
-                modifiedSpeed *= kartApex.kartData.iceFriction;
+                baseMultiplier = kartApex.kartData.iceSteer;
                 break;
             case TerrainType.Mud:
-                modifiedSpeed *= kartApex.kartData.mudFriction;
+                baseMultiplier = kartApex.kartData.mudSteer;
                 break;
             case TerrainType.Sand:
-                modifiedSpeed *= kartApex.kartData.sandFriction;
+                baseMultiplier = kartApex.kartData.sandSteer;
                 break;
             case TerrainType.OffRoad:
-                modifiedSpeed *= kartApex.kartData.offRoadFriction;
+                baseMultiplier = kartApex.kartData.offRoadSteer;
                 break;
         }
-        return modifiedSpeed;
+        
+        // Apply smoothing during terrain changes
+        if (terrainChangeSmoothing > 0f)
+        {
+            float previousMultiplier = GetPreviousTerrainSteerMultiplier();
+            float t = 1f - (terrainChangeSmoothing / TERRAIN_CHANGE_SMOOTHING_DURATION);
+            baseMultiplier = Mathf.Lerp(previousMultiplier, baseMultiplier, t);
+        }
+        
+        return baseMultiplier;
     }
-
-    public float HandleTerrainSteer(float steer)
+    
+    private float GetTerrainDriftMultiplier()
     {
-        float modifiedSteer = steer;
+        float baseMultiplier = 1f;
         switch (terrainType)
         {
             case TerrainType.Ground:
+                baseMultiplier = 1f;
                 break;
             case TerrainType.Ice:
-                modifiedSteer *= kartApex.kartData.iceSteer;
+                baseMultiplier = kartApex.kartData.iceDrift;
                 break;
             case TerrainType.Mud:
-                modifiedSteer *= kartApex.kartData.mudSteer;
+                baseMultiplier = kartApex.kartData.mudDrift;
                 break;
             case TerrainType.Sand:
-                modifiedSteer *= kartApex.kartData.sandSteer;
+                baseMultiplier = kartApex.kartData.sandDrift;
                 break;
             case TerrainType.OffRoad:
-                modifiedSteer *= kartApex.kartData.offRoadSteer;
+                baseMultiplier = kartApex.kartData.offRoadDrift;
                 break;
         }
-        return modifiedSteer;
+        
+        // Apply smoothing during terrain changes
+        if (terrainChangeSmoothing > 0f)
+        {
+            float previousMultiplier = GetPreviousTerrainDriftMultiplier();
+            float t = 1f - (terrainChangeSmoothing / TERRAIN_CHANGE_SMOOTHING_DURATION);
+            baseMultiplier = Mathf.Lerp(previousMultiplier, baseMultiplier, t);
+        }
+        
+        return baseMultiplier;
     }
-
-    public float HandleTerrainDrift(float drift)
+    
+    private float GetPreviousTerrainSpeedMultiplier()
     {
-        float modifiedDrift = drift;
-        switch (terrainType)
+        switch (previousTerrainType)
         {
             case TerrainType.Ground:
-                break;
+                return 1f;
             case TerrainType.Ice:
-                modifiedDrift *= kartApex.kartData.iceDrift;
-                break;
+                return kartApex.kartData.iceFriction;
             case TerrainType.Mud:
-                modifiedDrift *= kartApex.kartData.mudDrift;
-                break;
+                return kartApex.kartData.mudFriction;
             case TerrainType.Sand:
-                modifiedDrift *= kartApex.kartData.sandDrift;
-                break;
+                return kartApex.kartData.sandFriction;
             case TerrainType.OffRoad:
-                modifiedDrift *= kartApex.kartData.offRoadDrift;
-                break;
+                return kartApex.kartData.offRoadFriction;
+            default:
+                return 1f;
         }
-        return modifiedDrift;
+    }
+    
+    private float GetPreviousTerrainSteerMultiplier()
+    {
+        switch (previousTerrainType)
+        {
+            case TerrainType.Ground:
+                return 1f;
+            case TerrainType.Ice:
+                return kartApex.kartData.iceSteer;
+            case TerrainType.Mud:
+                return kartApex.kartData.mudSteer;
+            case TerrainType.Sand:
+                return kartApex.kartData.sandSteer;
+            case TerrainType.OffRoad:
+                return kartApex.kartData.offRoadSteer;
+            default:
+                return 1f;
+        }
+    }
+    
+    private float GetPreviousTerrainDriftMultiplier()
+    {
+        switch (previousTerrainType)
+        {
+            case TerrainType.Ground:
+                return 1f;
+            case TerrainType.Ice:
+                return kartApex.kartData.iceDrift;
+            case TerrainType.Mud:
+                return kartApex.kartData.mudDrift;
+            case TerrainType.Sand:
+                return kartApex.kartData.sandDrift;
+            case TerrainType.OffRoad:
+                return kartApex.kartData.offRoadDrift;
+            default:
+                return 1f;
+        }
     }
 }

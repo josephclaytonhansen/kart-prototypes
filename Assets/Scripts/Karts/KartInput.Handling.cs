@@ -51,14 +51,16 @@ public partial class KartInput
         // Calculate base turn amount
         float turnAmount = steerInput * kartApex.kartData.turnSpeed * effectiveSteeringFactor * Time.fixedDeltaTime;
         
-        // Apply terrain steering modification
-        turnAmount = HandleTerrainSteer(turnAmount);
+        // Apply terrain steering modification with smoothing
+        float terrainSteerMultiplier = GetTerrainSteerMultiplier();
+        turnAmount = turnAmount * terrainSteerMultiplier;
         
         if (isDrifting || kartApex.autoDrift)
         {
             Debug.Log(driftTimer);
-            // Apply terrain drift modification to the drift boost
-            float driftBoost = HandleTerrainDrift(kartApex.kartData.driftTurnBoost);
+            // Apply terrain drift modification to the drift boost with smoothing
+            float terrainDriftMultiplier = GetTerrainDriftMultiplier();
+            float driftBoost = kartApex.kartData.driftTurnBoost * terrainDriftMultiplier;
             turnAmount *= driftBoost;
             driftTimer += Time.fixedDeltaTime;
 
@@ -88,45 +90,45 @@ public partial class KartInput
     {
         if (isAccelerating)
         {
-        if (!kartLongBoosted && !kartShortBoosted){
-            oldMaxSpeed = kartApex.kartData.maxSpeed;
-            oldAccel = kartApex.kartData.acceleration;
-        }
-
-        if (kartLongBoosted)
-        {
-            
-            kartApex.kartData.maxSpeed = kartApex.kartData.maxBoostedSpeed;
-            
-            kartApex.kartData.acceleration = 100;
-            boostTimer += Time.fixedDeltaTime;
-            if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
+            // Handle boost states with local variables instead of modifying kartData
+            if (kartLongBoosted)
             {
-                kartLongBoosted = false;
-                boostTimer = 0f;
-                kartApex.kartData.maxSpeed = oldMaxSpeed;
-                kartApex.kartData.acceleration = oldAccel;
-                kartApex.BL_particleSystem.SetActive(false);
-                kartApex.BR_particleSystem.SetActive(false);
+                currentMaxSpeed = kartApex.kartData.maxBoostedSpeed;
+                currentAcceleration = 100;
+                boostTimer += Time.fixedDeltaTime;
+                if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
+                {
+                    kartLongBoosted = false;
+                    boostTimer = 0f;
+                    currentMaxSpeed = kartApex.kartData.maxSpeed;
+                    currentAcceleration = kartApex.kartData.acceleration;
+                    kartApex.BL_particleSystem.SetActive(false);
+                    kartApex.BR_particleSystem.SetActive(false);
+                }
             }
-        }
-
-        else if (kartShortBoosted)
-        {
-            kartApex.kartData.maxSpeed = kartApex.kartData.maxBoostedSpeed;
-            kartApex.kartData.acceleration = 100;
-            boostTimer += Time.fixedDeltaTime;
-            if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
+            else if (kartShortBoosted)
             {
-                kartShortBoosted = false;
-                boostTimer = 0f;
-                kartApex.kartData.maxSpeed = oldMaxSpeed;
-                kartApex.kartData.acceleration = oldAccel;
-                kartApex.BR_particleSystem.SetActive(false);
-                kartApex.BL_particleSystem.SetActive(false);
+                currentMaxSpeed = kartApex.kartData.maxBoostedSpeed;
+                currentAcceleration = 100;
+                boostTimer += Time.fixedDeltaTime;
+                if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
+                {
+                    kartShortBoosted = false;
+                    boostTimer = 0f;
+                    currentMaxSpeed = kartApex.kartData.maxSpeed;
+                    currentAcceleration = kartApex.kartData.acceleration;
+                    kartApex.BR_particleSystem.SetActive(false);
+                    kartApex.BL_particleSystem.SetActive(false);
+                }
             }
-        }
-            currentSpeed = Mathf.Lerp(currentSpeed, kartApex.kartData.maxSpeed, kartApex.kartData.acceleration * Time.fixedDeltaTime);
+            else
+            {
+                // Reset to base values when not boosting
+                currentMaxSpeed = kartApex.kartData.maxSpeed;
+                currentAcceleration = kartApex.kartData.acceleration;
+            }
+            
+            currentSpeed = Mathf.Lerp(currentSpeed, currentMaxSpeed, currentAcceleration * Time.fixedDeltaTime);
         }
         else if (brakeAction.IsPressed())
         {
@@ -144,13 +146,17 @@ public partial class KartInput
             currentSpeed = Mathf.Lerp(currentSpeed, 0, kartApex.kartData.deceleration * Time.fixedDeltaTime);
         }
         
-        // Apply terrain speed modification
-        currentSpeed = HandleTerrainSpeed(currentSpeed);
+        // Apply terrain speed modification with smoothing
+        float terrainSpeedMultiplier = GetTerrainSpeedMultiplier();
+        currentSpeed = currentSpeed * terrainSpeedMultiplier;
 
+        // Improved slope handling that prevents ground penetration during boosts
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
         float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;
         float forwardDotNormal = Vector3.Dot(transform.forward, averagedNormal);
-        if (Math.Abs(currentSpeed) > 3f)
+        
+        // Only apply slope influence if we're not in a boost state and moving reasonably fast
+        if (Math.Abs(currentSpeed) > 3f && !kartLongBoosted && !kartShortBoosted)
         {
             if (forwardDotNormal < 0)
             {
@@ -161,6 +167,7 @@ public partial class KartInput
                 currentSpeed += (slopeFactor * weightInfluence) * Time.fixedDeltaTime;
             }
         }
+        
         Vector3 movementDirection = transform.forward;
         Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, averagedNormal);
         if (isDrifting || kartApex.autoDrift)
@@ -172,7 +179,8 @@ public partial class KartInput
         {
             movementDirection = forwardOnGround.normalized;
         }
-        float checkDistance = (currentSpeed * Time.fixedDeltaTime) + kartApex.kartGameSettings.collisionLookahead;
+        
+        float checkDistance = (Math.Abs(currentSpeed) * Time.fixedDeltaTime) + kartApex.kartGameSettings.collisionLookahead;
         Vector3 checkDirection = movementDirection;
         RaycastHit hitInfo = new RaycastHit();
         bool hitFound = false;
@@ -187,6 +195,7 @@ public partial class KartInput
         centerRayOrigin += checkDirection * originOffset;
         leftRayOrigin += checkDirection * originOffset;
         rightRayOrigin += checkDirection * originOffset;
+        
         if (Physics.Raycast(centerRayOrigin, checkDirection, out hitInfo, checkDistance, kartApex.kartData.groundLayer))
         {
             hitFound = true;
@@ -208,6 +217,7 @@ public partial class KartInput
             Debug.DrawRay(leftRayOrigin, checkDirection * checkDistance, Color.green);
             Debug.DrawRay(rightRayOrigin, checkDirection * checkDistance, Color.green);
         }
+        
         if (hitFound)
         {
             onWallCollision.Invoke();
@@ -231,6 +241,7 @@ public partial class KartInput
                 Debug.DrawLine(transform.position, hitInfo.point, Color.yellow);
             }
         }
+        
         targetPosition += movementDirection * currentSpeed * Time.fixedDeltaTime;
     }
 
@@ -238,6 +249,7 @@ public partial class KartInput
     {
         Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, averagedNormal);
         targetRotation = Quaternion.LookRotation(forwardOnGround, averagedNormal);
+        
         if (groundHitCount > 0)
         {
             float averageHitHeight = 0f;
@@ -247,7 +259,23 @@ public partial class KartInput
             }
             averageHitHeight /= groundHitCount;
             Vector3 newTargetPos = targetPosition;
-            newTargetPos.y = averageHitHeight + kartApex.kartData.groundContactOffset;
+            
+            // Improved height calculation that accounts for boosts and slopes
+            float heightOffset = kartApex.kartData.groundContactOffset;
+            
+            // Add extra height offset during boosts to prevent ground clipping
+            if (kartLongBoosted || kartShortBoosted)
+            {
+                heightOffset += 0.1f; // Small extra offset during boosts
+            }
+            
+            // Adjust height based on slope to prevent penetration
+            if (currentSlope > 15f) // On steep slopes
+            {
+                heightOffset += Mathf.Lerp(0f, 0.2f, (currentSlope - 15f) / 45f);
+            }
+            
+            newTargetPos.y = averageHitHeight + heightOffset;
             targetPosition = newTargetPos;
         }
     }
@@ -284,7 +312,6 @@ public partial class KartInput
         }
     }
 
-
     private void StartLandingTransition()
     {
         if (isTransitioningToGrounded) return;
@@ -295,6 +322,13 @@ public partial class KartInput
         transitionStartPosition = transform.position;
         transitionStartRotation = transform.rotation;
         float finalOffset = kartApex.kartData.groundContactOffset + kartApex.kartGameSettings.landingHeightOffset;
+        
+        // Add extra offset during boosts to prevent ground penetration
+        if (kartLongBoosted || kartShortBoosted)
+        {
+            finalOffset += 0.1f;
+        }
+        
         targetPosition = landingAssistHit.point + landingAssistHit.normal * finalOffset;
         targetRotation = Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation;
         currentSpeed = kartApex.kartRigidbody.linearVelocity.magnitude;
@@ -352,14 +386,35 @@ public partial class KartInput
     // New helper method to check for a specific layer.
     private bool CheckGroundOnLayer(LayerMask layer)
     {
+        // Use a more aggressive check for death layers to ensure we catch them
+        Vector3 kartCenter = transform.position;
+        float checkRadius = 0.5f; // Small radius around kart center
+        
+        // Check center position
+        if (Physics.Raycast(kartCenter, Vector3.down, kartApex.kartData.groundCheckDistance * 2f, layer))
+        {
+            Debug.Log("Death layer detected via center raycast");
+            return true;
+        }
+        
+        // Check wheel positions as backup
         for (int i = 0; i < wheelTransforms.Length; i++)
         {
             Vector3 raycastOrigin = wheelTransforms[i].position;
-            if (Physics.Raycast(raycastOrigin, Vector3.down, 1f, layer)) // Use Vector3.down here too
+            if (Physics.Raycast(raycastOrigin, Vector3.down, kartApex.kartData.groundCheckDistance * 2f, layer))
             {
+                Debug.Log($"Death layer detected via wheel {i} raycast");
                 return true;
             }
         }
+        
+        // Also check with a spherecast for more reliable detection
+        if (Physics.SphereCast(kartCenter, checkRadius, Vector3.down, out RaycastHit hit, kartApex.kartData.groundCheckDistance, layer))
+        {
+            Debug.Log("Death layer detected via spherecast");
+            return true;
+        }
+        
         return false;
     }
 
@@ -404,11 +459,14 @@ public partial class KartInput
 
     private void HandleRampJump()
     {
+        if (stateChangeTimer < STATE_CHANGE_COOLDOWN) return; // Prevent rapid state changes
+        
         isJumping = true;
         kartApex.kartRigidbody.AddForce(transform.up * kartApex.kartGameSettings.jumpForce, ForceMode.VelocityChange);
         airborneTimer = 0f;
         // The state is now explicitly set to Jumping
         currentState = KartState.Jumping;
+        stateChangeTimer = 0f;
     }
 
     public void StartShortBoost(){

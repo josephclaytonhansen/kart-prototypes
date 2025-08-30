@@ -29,6 +29,7 @@ public partial class KartInput : MonoBehaviour
     }
 
     public TerrainType terrainType;
+    private TerrainType previousTerrainType;
 
     [Header("Input Actions")]
     public InputAction steerAction;
@@ -43,13 +44,13 @@ public partial class KartInput : MonoBehaviour
     protected float boostTimer = 0f;
     protected bool kartLongBoosted = false;
     protected bool kartShortBoosted = false;
+    protected float currentMaxSpeed; // Use local variable instead of modifying kartData
+    protected float currentAcceleration; // Use local variable instead of modifying kartData
     protected bool isOnRamp = false;
     protected bool isPerformingTrick = false;
     protected bool isJumping = false;
     protected bool isBouncing = false;
     protected float bounceTimer = 0f;
-    protected float oldMaxSpeed;
-    protected float oldAccel;
     protected Vector3 bounceStartPosition;
     protected Vector3 bounceTargetPosition;
     protected Quaternion bounceStartRotation;
@@ -88,6 +89,12 @@ public partial class KartInput : MonoBehaviour
 
     // New variables for last grounded position and death handling
     protected Vector3 lastGroundedPosition;
+    
+    // Stability improvements
+    protected float terrainChangeSmoothing = 0f;
+    protected float stateChangeTimer = 0f;
+    protected const float STATE_CHANGE_COOLDOWN = 0.1f;
+    protected const float TERRAIN_CHANGE_SMOOTHING_DURATION = 0.2f;
 
     [Header("Events")]
     public UnityEvent onAccelerate;
@@ -136,6 +143,10 @@ public partial class KartInput : MonoBehaviour
         {
             activeTerrainZones[terrainType] = 0;
         }
+        
+        // Initialize speed and acceleration values
+        currentMaxSpeed = kartApex.kartData.maxSpeed;
+        currentAcceleration = kartApex.kartData.acceleration;
     }
 
     void FixedUpdate()
@@ -145,13 +156,21 @@ public partial class KartInput : MonoBehaviour
             return; // Exit FixedUpdate if the kart is frozen
         }
         
+        // Update timers
+        stateChangeTimer += Time.fixedDeltaTime;
+        if (terrainChangeSmoothing > 0f)
+        {
+            terrainChangeSmoothing = Mathf.Max(0f, terrainChangeSmoothing - Time.fixedDeltaTime);
+        }
+        
         wasGrounded = isGrounded;
         isGrounded = CheckGround();
 
-        // Check if the kart is on a death layer
-        bool onDeathLayer = CheckGroundOnLayer(kartApex.deathLayer);
-        if (onDeathLayer)
+        // Check if the kart is on a death layer regardless of grounded state
+        // This ensures we catch death zones even during airborne moments
+        if (CheckGroundOnLayer(kartApex.deathLayer))
         {
+            Debug.Log("Death layer detected! Invoking recovery at position: " + lastGroundedPosition);
             kartApex.frozen = true;
             onGroundedOnDeathLayer.Invoke(lastGroundedPosition);
             return;
@@ -159,34 +178,39 @@ public partial class KartInput : MonoBehaviour
 
         if (isGrounded)
         {
-            // If the kart just became grounded, store a safe respawn position.
-            if (!wasGrounded)
+            // If the kart just became grounded and it's NOT a death zone, store a safe respawn position.
+            if (!wasGrounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN && !CheckGroundOnLayer(kartApex.deathLayer))
             {
                 // Start with the current position.
                 lastGroundedPosition = transform.position;
 
                 Vector3 backwardsDirection = -transform.forward;
                 // Subtract a small offset to ensure we don't collide with the ground immediately.
-                lastGroundedPosition = lastGroundedPosition - (backwardsDirection * currentSpeed);
+                lastGroundedPosition = lastGroundedPosition - (backwardsDirection * Mathf.Max(currentSpeed, 1f));
                 // add a small y offset so it's slightly off the ground
                 lastGroundedPosition.y += 1f;
+                
+                Debug.Log("Updated safe respawn position: " + lastGroundedPosition);
+                stateChangeTimer = 0f;
             }
             
-            if (currentState != KartState.Grounded)
+            if (currentState != KartState.Grounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN)
             {
                 currentState = KartState.Grounded;
                 if (airborneTimer > kartApex.kartGameSettings.hopGracePeriod)
                 {
                     onLanding.Invoke();
                 }
+                stateChangeTimer = 0f;
             }
             HandleGroundedMovement();
         }
         else // Kart is not on the ground
         {
-            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick)
+            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick && stateChangeTimer >= STATE_CHANGE_COOLDOWN)
             {
                 currentState = KartState.Airborne;
+                stateChangeTimer = 0f;
             }
             HandleAirborneMovement();
         }
