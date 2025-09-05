@@ -14,6 +14,8 @@ public class KartGameSettings : ScriptableObject
     [Header("Boost Settings")]
     public float shortBoostDuration = 1.0f;
     public float longBoostDuration = 2.0f;
+    [Tooltip("IMPROVED: Configurable boost acceleration from MKW")]
+    public float boostAcceleration = 100f;
 
     [Header("Tailwind Settings")]
     public float tailwindTimeToBoost = 3.0f;
@@ -55,6 +57,32 @@ public class KartGameSettings : ScriptableObject
     public float visualHopIntensity = 0.05f;
     [Tooltip("Distance ahead to check for the end of a jump ramp")]
     public float jumpRayLength = 2f;
+    
+    [Header("Mario Kart Wii Jump Arc System")]
+    [Tooltip("Duration of the jump arc in seconds")]
+    public float jumpArcDuration = 1.2f;
+    [Tooltip("Peak height of the jump arc")]
+    public float jumpArcHeight = 8f;
+    [Tooltip("Forward distance covered during jump")]
+    public float jumpArcDistance = 15f;
+    [Tooltip("How smoothly the jump transitions (higher = smoother)")]
+    public AnimationCurve jumpArcCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    [Header("Mario Kart Wii Improvements")]
+    [Tooltip("IMPROVED: Input deadzone to prevent tiny joystick movements")]
+    public float inputDeadzone = 0.15f;
+    [Tooltip("IMPROVED: Airborne control strength (rotation-based like MKW)")]
+    public float airborneControlStrength = 0.5f;
+    [Tooltip("IMPROVED: Minimum airborne time before trick can be performed")]
+    public float trickMinAirborneTime = 0.2f;
+    [Tooltip("IMPROVED: SphereCast ground ray origin offset")]
+    public float groundRayOriginOffset = 0.05f;
+    
+    [Header("Particle Colors")]
+    [Tooltip("IMPROVED: Modern ParticleSystem API color for blue boost")]
+    public Color blueBoostColor = new Color(0f, 0.7f, 1f);
+    [Tooltip("IMPROVED: Modern ParticleSystem API color for orange boost")]
+    public Color orangeBoostColor = new Color(1f, 0.7f, 0f);
 
 
     public enum BounceType

@@ -81,6 +81,18 @@ public partial class KartInput : MonoBehaviour
     protected Transform[] wheelTransforms;
     private List<InputAction> allActions;
 
+    // IMPROVED: Mario Kart Wii Arc Jump System
+    protected bool isPerformingArcJump = false;
+    protected float arcJumpTimer = 0f;
+    protected Vector3 arcJumpStartPosition;
+    protected Vector3 arcJumpTargetPosition;
+    protected Vector3 arcJumpPeakPosition;
+    protected Quaternion arcJumpStartRotation;
+    protected Quaternion arcJumpTargetRotation;
+    
+    // IMPROVED: Mario Kart Wii Trick System
+    protected bool trickPerformedOnRamp = false; // Track if trick was done during ramp takeoff
+
     // Terrain tracking
     protected Dictionary<TerrainType, int> activeTerrainZones = new Dictionary<TerrainType, int>();
 
@@ -178,6 +190,13 @@ public partial class KartInput : MonoBehaviour
 
         if (isGrounded)
         {
+            // Don't process ground logic if we're in the middle of an arc jump
+            if (isPerformingArcJump)
+            {
+                HandleGroundedMovement(); // Still call this for arc jump handling
+                return;
+            }
+            
             // If the kart just became grounded and it's NOT a death zone, store a safe respawn position.
             if (!wasGrounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN && !CheckGroundOnLayer(kartApex.deathLayer))
             {
@@ -194,12 +213,23 @@ public partial class KartInput : MonoBehaviour
                 stateChangeTimer = 0f;
             }
             
-            if (currentState != KartState.Grounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN)
+            // IMPROVED: Don't change state to grounded if performing arc jump
+            if (currentState != KartState.Grounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN && !isPerformingArcJump)
             {
                 currentState = KartState.Grounded;
                 if (airborneTimer > kartApex.kartGameSettings.hopGracePeriod)
                 {
                     onLanding.Invoke();
+                    
+                    // IMPROVED: Apply trick boost if a trick was performed on ramp takeoff
+                    if (trickPerformedOnRamp)
+                    {
+                        kartShortBoosted = true;
+                        boostTimer = 0f;
+                        trickPerformedOnRamp = false; // Reset trick state
+                        isPerformingTrick = false;
+                        Debug.Log("Trick landing boost applied!");
+                    }
                 }
                 stateChangeTimer = 0f;
             }
@@ -207,7 +237,9 @@ public partial class KartInput : MonoBehaviour
         }
         else // Kart is not on the ground
         {
-            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick && stateChangeTimer >= STATE_CHANGE_COOLDOWN)
+            // IMPROVED: Don't change state if performing arc jump - let arc jump manage its own states
+            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick && 
+                stateChangeTimer >= STATE_CHANGE_COOLDOWN && !isPerformingArcJump)
             {
                 currentState = KartState.Airborne;
                 stateChangeTimer = 0f;
@@ -270,7 +302,9 @@ public partial class KartInput : MonoBehaviour
     public void OnSteer(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
-        steerInput = context.ReadValue<float>();
+        // IMPROVED: Add input deadzone from Mario Kart Wii
+        float rawInput = context.ReadValue<float>();
+        steerInput = Mathf.Abs(rawInput) > kartApex.kartGameSettings.inputDeadzone ? rawInput : 0f;
         onSteer.Invoke();
     }
     public void OnDrift(InputAction.CallbackContext context)
@@ -326,11 +360,14 @@ public partial class KartInput : MonoBehaviour
     private void OnTrick(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
-        // Only allow a trick if the kart is in the Jumping state
-        if (currentState == KartState.Jumping)
+        // IMPROVED: Mario Kart Wii trick system - perform trick when going off ramp
+        if (isOnRamp && currentState == KartState.Grounded)
         {
+            trickPerformedOnRamp = true;
+            isPerformingTrick = true;
             currentState = KartState.PerformingTrick;
             onTrick.Invoke();
+            Debug.Log("Trick performed on ramp takeoff!");
         }
     }
 
@@ -373,6 +410,13 @@ public partial class KartInput : MonoBehaviour
         if (other.CompareTag("JumpRamp"))
         {
             isOnRamp = false;
+            // Reset trick state if leaving ramp without jumping
+            if (!isPerformingArcJump && trickPerformedOnRamp)
+            {
+                trickPerformedOnRamp = false;
+                isPerformingTrick = false;
+                Debug.Log("Trick cancelled - left ramp without jumping");
+            }
             return;
         }
         

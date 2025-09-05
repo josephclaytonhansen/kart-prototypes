@@ -5,6 +5,13 @@ public partial class KartInput
 {
     private void HandleGroundedMovement()
     {
+        // IMPROVED: Handle arc jump during grounded movement
+        if (isPerformingArcJump)
+        {
+            HandleArcJump();
+            return;
+        }
+        
         if (currentState != KartState.Grounded)
         {
             // Only perform these actions on the frame the kart becomes grounded
@@ -25,11 +32,27 @@ public partial class KartInput
     private void HandleAirborneMovement()
     {
         airborneTimer += Time.fixedDeltaTime;
+        
+        // IMPROVED: Handle Mario Kart Wii style arc jumping
+        if (isPerformingArcJump)
+        {
+            HandleArcJump();
+            return;
+        }
+        
         if (kartApex.kartRigidbody.isKinematic)
         {
             kartApex.kartRigidbody.isKinematic = false;
             kartApex.kartRigidbody.useGravity = true;
             kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
+        }
+        
+        // IMPROVED: Add limited airborne control like Mario Kart Wii (rotation-based, not force-based)
+        if (Mathf.Abs(steerInput) > kartApex.kartGameSettings.inputDeadzone)
+        {
+            float airborneControlStrength = kartApex.kartGameSettings.airborneControlStrength;
+            float airborneSteer = steerInput * airborneControlStrength * kartApex.kartData.turnSpeed * Time.fixedDeltaTime;
+            transform.Rotate(0, airborneSteer, 0);
         }
         
         CheckForLandingAssist();
@@ -72,14 +95,19 @@ public partial class KartInput
                 kartApex.BL_particleSystem.SetActive(true);
                 kartApex.BR_particleSystem.SetActive(true);
                 
-                lps.startColor = new Color(0f, 0.7f, 1f);
-                rps.startColor = new Color(0f, 0.7f, 1f);
+                // IMPROVED: Use modern ParticleSystem API
+                var lpsMain = lps.main;
+                var rpsMain = rps.main;
+                lpsMain.startColor = kartApex.kartGameSettings.blueBoostColor;
+                rpsMain.startColor = kartApex.kartGameSettings.blueBoostColor;
             }
 
             if (driftTimer >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift){
-
-                lps.startColor = new Color(1f, 0.7f, 0f);
-                rps.startColor = new Color(1f, 0.7f, 0f);
+                // IMPROVED: Use modern ParticleSystem API
+                var lpsMain = lps.main;
+                var rpsMain = rps.main;
+                lpsMain.startColor = kartApex.kartGameSettings.orangeBoostColor;
+                rpsMain.startColor = kartApex.kartGameSettings.orangeBoostColor;
             } 
         }
         
@@ -94,7 +122,7 @@ public partial class KartInput
             if (kartLongBoosted)
             {
                 currentMaxSpeed = kartApex.kartData.maxBoostedSpeed;
-                currentAcceleration = 100;
+                currentAcceleration = kartApex.kartGameSettings.boostAcceleration;
                 boostTimer += Time.fixedDeltaTime;
                 if (boostTimer >= kartApex.kartGameSettings.longBoostDuration)
                 {
@@ -109,7 +137,7 @@ public partial class KartInput
             else if (kartShortBoosted)
             {
                 currentMaxSpeed = kartApex.kartData.maxBoostedSpeed;
-                currentAcceleration = 100;
+                currentAcceleration = kartApex.kartGameSettings.boostAcceleration;
                 boostTimer += Time.fixedDeltaTime;
                 if (boostTimer >= kartApex.kartGameSettings.shortBoostDuration)
                 {
@@ -149,6 +177,9 @@ public partial class KartInput
         // Apply terrain speed modification with smoothing
         float terrainSpeedMultiplier = GetTerrainSpeedMultiplier();
         currentSpeed = currentSpeed * terrainSpeedMultiplier;
+
+        // IMPROVED: Mario Kart Wii Tailwind System
+        HandleTailwind();
 
         // Improved slope handling that prevents ground penetration during boosts
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
@@ -461,12 +492,135 @@ public partial class KartInput
     {
         if (stateChangeTimer < STATE_CHANGE_COOLDOWN) return; // Prevent rapid state changes
         
+        // IMPROVED: Mario Kart Wii style graceful arc jump (NOT physics-based)
         isJumping = true;
-        kartApex.kartRigidbody.AddForce(transform.up * kartApex.kartGameSettings.jumpForce, ForceMode.VelocityChange);
+        isPerformingArcJump = true;
+        arcJumpTimer = 0f;
+        
+        // Store start position and rotation
+        arcJumpStartPosition = transform.position;
+        arcJumpStartRotation = transform.rotation;
+        
+        // Calculate target landing position
+        Vector3 jumpDirection = transform.forward;
+        arcJumpTargetPosition = arcJumpStartPosition + jumpDirection * kartApex.kartGameSettings.jumpArcDistance;
+        
+        // Calculate peak position (midpoint of arc)
+        Vector3 midPoint = Vector3.Lerp(arcJumpStartPosition, arcJumpTargetPosition, 0.5f);
+        arcJumpPeakPosition = midPoint + Vector3.up * kartApex.kartGameSettings.jumpArcHeight;
+        
+        // Calculate target rotation (maintain forward direction)
+        arcJumpTargetRotation = Quaternion.LookRotation(jumpDirection, Vector3.up);
+        
+        // Set rigidbody to kinematic for controlled movement
+        kartApex.kartRigidbody.isKinematic = true;
+        kartApex.kartRigidbody.useGravity = false;
+        
+        // Reset timers and set state
         airborneTimer = 0f;
-        // The state is now explicitly set to Jumping
-        currentState = KartState.Jumping;
+        // Set state based on whether trick was performed
+        currentState = isPerformingTrick ? KartState.PerformingTrick : KartState.Jumping;
         stateChangeTimer = 0f;
+        
+        Debug.Log("Mario Kart Wii style arc jump started - graceful and smooth!");
+    }
+
+    // IMPROVED: Handle the graceful arc jump movement like Mario Kart Wii
+    private void HandleArcJump()
+    {
+        arcJumpTimer += Time.fixedDeltaTime;
+        float normalizedTime = arcJumpTimer / kartApex.kartGameSettings.jumpArcDuration;
+        
+        if (normalizedTime >= 1f)
+        {
+            // IMPROVED: Check for ground/slope at landing position
+            Vector3 finalLandingPos = arcJumpTargetPosition;
+            if (Physics.Raycast(arcJumpTargetPosition + Vector3.up * 2f, Vector3.down, out RaycastHit landingHit, 5f, kartApex.kartData.groundLayer))
+            {
+                // Adapt landing to actual ground surface (including slopes)
+                finalLandingPos = landingHit.point + landingHit.normal * kartApex.kartData.groundContactOffset;
+                arcJumpTargetRotation = Quaternion.LookRotation(transform.forward, landingHit.normal);
+            }
+            
+            // Jump complete - land gracefully on slope-adapted position
+            isPerformingArcJump = false;
+            transform.position = finalLandingPos;
+            transform.rotation = arcJumpTargetRotation;
+            
+            // Restore physics for landing
+            kartApex.kartRigidbody.isKinematic = false;
+            kartApex.kartRigidbody.useGravity = true;
+            kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
+            
+            currentState = KartState.Airborne; // Let normal landing logic take over
+            return;
+        }
+        
+        // Apply the jump arc curve for smooth motion
+        float curveValue = kartApex.kartGameSettings.jumpArcCurve.Evaluate(normalizedTime);
+        
+        // Calculate position along the arc using quadratic bezier curve
+        Vector3 currentPos = CalculateQuadraticBezierPoint(normalizedTime, arcJumpStartPosition, arcJumpPeakPosition, arcJumpTargetPosition);
+        
+        // IMPROVED: Check for wall collisions during arc jump
+        Vector3 movementDirection = (currentPos - transform.position).normalized;
+        float movementDistance = Vector3.Distance(currentPos, transform.position);
+        
+        if (Physics.Raycast(transform.position, movementDirection, out RaycastHit wallHit, movementDistance + 0.5f, kartApex.kartData.groundLayer))
+        {
+            float wallAngle = Vector3.Angle(wallHit.normal, Vector3.up);
+            if (wallAngle > kartApex.kartGameSettings.wallAngleThreshold)
+            {
+                // Hit a wall during arc jump - end arc early and bounce
+                isPerformingArcJump = false;
+                transform.position = wallHit.point + wallHit.normal * kartApex.kartGameSettings.bounceSafeDistance;
+                
+                // Calculate bounce direction
+                Vector3 bounceDirection = Vector3.Reflect(movementDirection, wallHit.normal);
+                arcJumpTargetRotation = Quaternion.LookRotation(bounceDirection, Vector3.up);
+                transform.rotation = arcJumpTargetRotation;
+                
+                // Restore physics and apply bounce
+                kartApex.kartRigidbody.isKinematic = false;
+                kartApex.kartRigidbody.useGravity = true;
+                kartApex.kartRigidbody.linearVelocity = bounceDirection * currentSpeed * 0.5f; // Reduced speed from collision
+                
+                currentState = KartState.Airborne;
+                onWallCollision.Invoke();
+                Debug.Log("Wall collision during arc jump - bounced!");
+                return;
+            }
+        }
+        
+        transform.position = currentPos;
+        
+        // Smoothly rotate during the jump
+        transform.rotation = Quaternion.Slerp(arcJumpStartRotation, arcJumpTargetRotation, curveValue);
+        
+        // IMPROVED: Allow airborne steering during arc jump
+        if (Mathf.Abs(steerInput) > kartApex.kartGameSettings.inputDeadzone)
+        {
+            float airborneControlStrength = kartApex.kartGameSettings.airborneControlStrength * 0.5f; // Reduced during arc
+            float airborneSteer = steerInput * airborneControlStrength * kartApex.kartData.turnSpeed * Time.fixedDeltaTime;
+            transform.Rotate(0, airborneSteer, 0);
+            
+            // Update target rotation to maintain new direction
+            arcJumpTargetRotation *= Quaternion.Euler(0, airborneSteer, 0);
+        }
+    }
+    
+    // Helper method for smooth arc calculation
+    private Vector3 CalculateQuadraticBezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2)
+    {
+        float u = 1 - t;
+        float tt = t * t;
+        float uu = u * u;
+        
+        Vector3 point = uu * p0; // (1-t)^2 * P0
+        point += 2 * u * t * p1; // 2(1-t)t * P1
+        point += tt * p2; // t^2 * P2
+        
+        return point;
     }
 
     public void StartShortBoost(){
@@ -477,5 +631,45 @@ public partial class KartInput
     public void StartLongBoost(){
         kartLongBoosted = true;
         boostTimer = 0f;
+    }
+    
+    // IMPROVED: Mario Kart Wii Tailwind System Framework
+    private void HandleTailwind()
+    {
+        // TODO: Implement proper tailwind detection when we have:
+        // - Other kart detection system
+        // - Distance/proximity calculations
+        // - Slipstream area detection
+        
+        // Framework for tailwind conditions:
+        bool isBehindKart = false; // TODO: Check if behind another kart
+        bool inSlipstreamRange = false; // TODO: Check distance and angle
+        bool speedRequirementMet = currentSpeed > kartApex.kartData.maxSpeed * 0.7f;
+        
+        if (isBehindKart && inSlipstreamRange && speedRequirementMet && isAccelerating)
+        {
+            tailwindTimer += Time.fixedDeltaTime;
+            
+            if (tailwindTimer >= kartApex.kartGameSettings.tailwindTimeToBoost)
+            {
+                // Apply tailwind boost
+                currentSpeed *= kartApex.kartGameSettings.tailwindBoostMultiplier;
+                tailwindTimer = 0f;
+                onTailwindBoost.Invoke();
+                Debug.Log("Tailwind boost applied!");
+            }
+            else if (tailwindTimer > 0.1f)
+            {
+                onTailwind.Invoke();
+            }
+        }
+        else
+        {
+            // Reset tailwind timer if conditions not met
+            if (tailwindTimer > 0f)
+            {
+                tailwindTimer = Mathf.Max(0f, tailwindTimer - Time.fixedDeltaTime * 2f);
+            }
+        }
     }
 }

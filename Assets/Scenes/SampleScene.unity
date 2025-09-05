@@ -952,21 +952,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 919132148681321500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 101534f90fc651a4cba08461f7b4b6b3, type: 3}
+  m_Script: {fileID: 11500000, guid: a2a2ea3a7bfdd544b9f1c1eeb1e78d84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
   kartApex: {fileID: 919132148681321503}
-  terrainType: 1
   steerAction:
     m_Name: Steer
     m_Type: 0
-    m_ExpectedControlType: Axis
-    m_Id: 435969ac-1a8f-4771-b04f-5d3f9bbc9337
-    m_Processors: AxisDeadzone
+    m_ExpectedControlType: 
+    m_Id: 2baa479e-491b-4706-8897-3bdf289e7104
+    m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 1D Axis
-      m_Id: 1049c17a-c2b8-4b1a-bfe1-e47d4b85b36d
+      m_Id: fae35a58-c420-4681-b75a-c5ea5cc21439
       m_Path: 1DAxis
       m_Interactions: 
       m_Processors: 
@@ -974,7 +973,7 @@ MonoBehaviour:
       m_Action: Steer
       m_Flags: 4
     - m_Name: negative
-      m_Id: 07d6ee12-91e4-40ff-bb0b-d886420a7ab3
+      m_Id: d455f1b6-0260-4572-8b3b-b5335e54f65a
       m_Path: <Keyboard>/a
       m_Interactions: 
       m_Processors: 
@@ -982,7 +981,7 @@ MonoBehaviour:
       m_Action: Steer
       m_Flags: 8
     - m_Name: positive
-      m_Id: 0de61441-0ec1-4fd9-9e18-b402a27ab86f
+      m_Id: 915fa21b-4d48-43b3-8abe-f2054c49bf7a
       m_Path: <Keyboard>/d
       m_Interactions: 
       m_Processors: 
@@ -994,12 +993,12 @@ MonoBehaviour:
     m_Name: Accelerate
     m_Type: 1
     m_ExpectedControlType: Button
-    m_Id: b25be24b-668c-4a76-a49b-ceb356a45c55
+    m_Id: 64bedf10-ac6a-48f0-b154-bdd6cc1a833c
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: 9640c5e2-460f-4891-ad5b-303bb5edc379
+      m_Id: 41456b7c-4efd-42f2-83db-41b9c887f809
       m_Path: <Keyboard>/w
       m_Interactions: 
       m_Processors: 
@@ -1009,14 +1008,14 @@ MonoBehaviour:
     m_Flags: 0
   brakeAction:
     m_Name: Brake
-    m_Type: 1
-    m_ExpectedControlType: Button
-    m_Id: f4fcb899-708d-439f-8263-fbf6673dd4e2
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 0af60582-adde-4f66-856b-c13106fb808e
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: 959e96bb-1c3b-43f2-983c-c3076276cf17
+      m_Id: abc78fa8-dce3-4a79-822f-80705c51f424
       m_Path: <Keyboard>/s
       m_Interactions: 
       m_Processors: 
@@ -1026,31 +1025,23 @@ MonoBehaviour:
     m_Flags: 0
   trickAction:
     m_Name: Trick
-    m_Type: 1
-    m_ExpectedControlType: Button
-    m_Id: cddf363b-5285-484b-9e7f-bd62e4e8f960
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 0b3e2410-45e2-4e9f-95f0-6333e658ce48
     m_Processors: 
     m_Interactions: 
-    m_SingletonActionBindings:
-    - m_Name: 
-      m_Id: ec3fe2e4-2705-471b-9a64-d437b6b4a3eb
-      m_Path: <Keyboard>/space
-      m_Interactions: 
-      m_Processors: 
-      m_Groups: 
-      m_Action: Trick
-      m_Flags: 0
+    m_SingletonActionBindings: []
     m_Flags: 0
   driftAction:
     m_Name: Drift
-    m_Type: 1
-    m_ExpectedControlType: Button
-    m_Id: a58e5495-5034-49fb-904d-be3d66ffdafe
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 9b44a790-0634-45a9-bc83-d4d512197f80
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: 6ad7343d-435c-4120-bacd-41b6fce5a604
+      m_Id: 87b6957d-0200-47dc-9c48-055e6ab2fb8f
       m_Path: <Keyboard>/shift
       m_Interactions: 
       m_Processors: 
@@ -1060,14 +1051,14 @@ MonoBehaviour:
     m_Flags: 0
   lookBackAction:
     m_Name: Look Back
-    m_Type: 1
-    m_ExpectedControlType: Button
-    m_Id: 07b7688a-fbcd-4457-ba2e-495564df6743
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 3403ac65-b9ac-4960-ab3a-5252e7164ea6
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: 76488c43-7e7a-463b-b6a2-7adc106446d8
+      m_Id: 5710a252-f49a-4773-bcbe-db08ce1f5fdf
       m_Path: <Keyboard>/r
       m_Interactions: 
       m_Processors: 
@@ -1101,34 +1092,10 @@ MonoBehaviour:
       m_Calls: []
   onDriftBlueBoost:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 565054161}
-        m_TargetAssemblyTypeName: KartInput, Assembly-CSharp
-        m_MethodName: StartShortBoost
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onDriftOrangeBoost:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 565054161}
-        m_TargetAssemblyTypeName: KartInput, Assembly-CSharp
-        m_MethodName: StartLongBoost
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   onTailwind:
     m_PersistentCalls:
       m_Calls: []
@@ -1137,19 +1104,7 @@ MonoBehaviour:
       m_Calls: []
   onGroundedOnDeathLayer:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 919132148681321503}
-        m_TargetAssemblyTypeName: KartApex, Assembly-CSharp
-        m_MethodName: RecoverFromDeath
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &584486368
 GameObject:
   m_ObjectHideFlags: 0
@@ -2986,7 +2941,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 919132148681321500}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bcfb1399e7b829498e869304e1f71dc, type: 3}
+  m_Script: {fileID: 11500000, guid: e5f7bb6bdac67c04aac389122fbce94d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KartApex
   playerControlled: 1
@@ -3008,7 +2963,7 @@ MonoBehaviour:
   kartRigidbody: {fileID: 919132148681321501}
   kartVisualsRoot: {fileID: 1793845977}
   kartCollider: {fileID: 6835908548692531381}
-  autoDrift: 0
+  autoDrift: 1
   kartMeshUpdate: {fileID: 329552299}
   kartGameSettings: {fileID: 11400000, guid: 031ba4654ae87da44bc7dad3b85e997a, type: 2}
   chassisVisuals: {fileID: 317479229480042518}
