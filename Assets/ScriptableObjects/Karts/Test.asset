@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f681a2a83f6c5349abea3bf39fa2b71, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: Assembly-CSharp::KartData
-  maxSpeed: 20
+  maxSpeed: 25
   maxBoostedSpeed: 60
   weight: 300
   acceleration: 15

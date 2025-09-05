@@ -5,7 +5,6 @@ public partial class KartInput
 {
     private void HandleGroundedMovement()
     {
-        // IMPROVED: Handle arc jump during grounded movement
         if (isPerformingArcJump)
         {
             HandleArcJump();
@@ -33,7 +32,6 @@ public partial class KartInput
     {
         airborneTimer += Time.fixedDeltaTime;
         
-        // IMPROVED: Handle Mario Kart Wii style arc jumping
         if (isPerformingArcJump)
         {
             HandleArcJump();
@@ -47,7 +45,6 @@ public partial class KartInput
             kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
         }
         
-        // IMPROVED: Add limited airborne control like Mario Kart Wii (rotation-based, not force-based)
         if (Mathf.Abs(steerInput) > kartApex.kartGameSettings.inputDeadzone)
         {
             float airborneControlStrength = kartApex.kartGameSettings.airborneControlStrength;
@@ -80,7 +77,6 @@ public partial class KartInput
         
         if (isDrifting || kartApex.autoDrift)
         {
-            Debug.Log(driftTimer);
             // Apply terrain drift modification to the drift boost with smoothing
             float terrainDriftMultiplier = GetTerrainDriftMultiplier();
             float driftBoost = kartApex.kartData.driftTurnBoost * terrainDriftMultiplier;
@@ -95,7 +91,6 @@ public partial class KartInput
                 kartApex.BL_particleSystem.SetActive(true);
                 kartApex.BR_particleSystem.SetActive(true);
                 
-                // IMPROVED: Use modern ParticleSystem API
                 var lpsMain = lps.main;
                 var rpsMain = rps.main;
                 lpsMain.startColor = kartApex.kartGameSettings.blueBoostColor;
@@ -103,7 +98,6 @@ public partial class KartInput
             }
 
             if (driftTimer >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift){
-                // IMPROVED: Use modern ParticleSystem API
                 var lpsMain = lps.main;
                 var rpsMain = rps.main;
                 lpsMain.startColor = kartApex.kartGameSettings.orangeBoostColor;
@@ -118,7 +112,6 @@ public partial class KartInput
     {
         if (isAccelerating)
         {
-            // Handle boost states with local variables instead of modifying kartData
             if (kartLongBoosted)
             {
                 currentMaxSpeed = kartApex.kartData.maxBoostedSpeed;
@@ -151,7 +144,6 @@ public partial class KartInput
             }
             else
             {
-                // Reset to base values when not boosting
                 currentMaxSpeed = kartApex.kartData.maxSpeed;
                 currentAcceleration = kartApex.kartData.acceleration;
             }
@@ -178,15 +170,12 @@ public partial class KartInput
         float terrainSpeedMultiplier = GetTerrainSpeedMultiplier();
         currentSpeed = currentSpeed * terrainSpeedMultiplier;
 
-        // IMPROVED: Mario Kart Wii Tailwind System
         HandleTailwind();
 
-        // Improved slope handling that prevents ground penetration during boosts
         float slopeFactor = (float)Math.Sin(currentSlope * Mathf.Deg2Rad);
         float weightInfluence = (kartApex.kartData.weight - kartApex.kartGameSettings.minKartWeight) * kartApex.kartGameSettings.slopeInfluence;
         float forwardDotNormal = Vector3.Dot(transform.forward, averagedNormal);
         
-        // Only apply slope influence if we're not in a boost state and moving reasonably fast
         if (Math.Abs(currentSpeed) > 3f && !kartLongBoosted && !kartShortBoosted)
         {
             if (forwardDotNormal < 0)
@@ -310,318 +299,6 @@ public partial class KartInput
             targetPosition = newTargetPos;
         }
     }
-    
-    private void CheckForLandingAssist()
-    {
-        if (airborneTimer < kartApex.kartGameSettings.hopGracePeriod)
-        {
-            return;
-        }
-
-        Vector3 raycastDirection = Vector3.Slerp(Vector3.down, transform.forward, kartApex.kartGameSettings.landingAssistLookahead).normalized;
-        Debug.DrawRay(transform.position, raycastDirection * kartApex.kartGameSettings.landingRayLength, Color.red);
-
-        RaycastHit hit;
-        Vector3 colliderWorldCenter = kartApex.kartCollider.transform.position;
-        Vector3 colliderForward = kartApex.kartCollider.transform.forward;
-        Vector3 colliderRight = kartApex.kartCollider.transform.right;
-        Vector3 colliderExtents = kartApex.kartCollider.size / 2f;
-
-        Vector3 frontRayOrigin = colliderWorldCenter + colliderForward * colliderExtents.z + Vector3.down * 0.1f;
-        Vector3 backRayOrigin = colliderWorldCenter - colliderForward * colliderExtents.z + Vector3.down * 0.1f;
-
-        bool frontHit = Physics.Raycast(frontRayOrigin, Vector3.down, out hit, kartApex.kartGameSettings.landingRayLength, kartApex.kartData.groundLayer);
-        bool backHit = Physics.Raycast(backRayOrigin, Vector3.down, out hit, kartApex.kartGameSettings.landingRayLength, kartApex.kartData.groundLayer);
-
-        if (frontHit || backHit)
-        {
-            landingAssistHit = hit;
-            if (!isTransitioningToGrounded)
-            {
-                StartLandingTransition();
-            }
-        }
-    }
-
-    private void StartLandingTransition()
-    {
-        if (isTransitioningToGrounded) return;
-        isTransitioningToGrounded = true;
-        kartApex.kartRigidbody.isKinematic = true;
-        kartApex.kartRigidbody.useGravity = false;
-        kartApex.kartRigidbody.Sleep();
-        transitionStartPosition = transform.position;
-        transitionStartRotation = transform.rotation;
-        float finalOffset = kartApex.kartData.groundContactOffset + kartApex.kartGameSettings.landingHeightOffset;
-        
-        // Add extra offset during boosts to prevent ground penetration
-        if (kartLongBoosted || kartShortBoosted)
-        {
-            finalOffset += 0.1f;
-        }
-        
-        targetPosition = landingAssistHit.point + landingAssistHit.normal * finalOffset;
-        targetRotation = Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation;
-        currentSpeed = kartApex.kartRigidbody.linearVelocity.magnitude;
-        transitionTimer = 0;
-    }
-
-    private void HandleLandingTransition()
-    {
-        transitionTimer += Time.fixedDeltaTime;
-        float t = Mathf.Clamp01(transitionTimer / kartApex.kartGameSettings.transitionDuration);
-        transform.position = Vector3.Lerp(transitionStartPosition, targetPosition, t);
-        transform.rotation = Quaternion.Slerp(transitionStartRotation, targetRotation, t);
-        if (t >= 1.0f)
-        {
-            isTransitioningToGrounded = false;
-            // Now that we have landed, change the state to grounded
-            currentState = KartState.Grounded; 
-            if (airborneTimer > 0.05f)
-            {
-                onLanding.Invoke();
-            }
-        }
-    }
-
-    private bool CheckGround()
-    {
-        groundHitCount = 0;
-        Vector3 tempAveragedNormal = Vector3.zero;
-        
-        for (int i = 0; i < wheelTransforms.Length; i++)
-        {
-            // Use a consistent downward direction for ground checking regardless of kart orientation
-            Vector3 raycastOrigin = wheelTransforms[i].position - transform.up * kartApex.kartData.groundContactOffset;
-            Vector3 raycastDirection = Vector3.down; // Always cast straight down in world space
-            
-            if (Physics.Raycast(raycastOrigin, raycastDirection, out groundHits[groundHitCount], kartApex.kartData.groundCheckDistance, kartApex.kartData.groundLayer))
-            {
-                tempAveragedNormal += groundHits[groundHitCount].normal;
-                groundHitCount++;
-            }
-        }
-        
-        if (groundHitCount > 0)
-        {
-            averagedNormal = tempAveragedNormal.normalized;
-        }
-        else
-        {
-            averagedNormal = Vector3.up;
-        }
-        
-        return groundHitCount > 0;
-    }
-
-    // New helper method to check for a specific layer.
-    private bool CheckGroundOnLayer(LayerMask layer)
-    {
-        // Use a more aggressive check for death layers to ensure we catch them
-        Vector3 kartCenter = transform.position;
-        float checkRadius = 0.5f; // Small radius around kart center
-        
-        // Check center position
-        if (Physics.Raycast(kartCenter, Vector3.down, kartApex.kartData.groundCheckDistance * 2f, layer))
-        {
-            Debug.Log("Death layer detected via center raycast");
-            return true;
-        }
-        
-        // Check wheel positions as backup
-        for (int i = 0; i < wheelTransforms.Length; i++)
-        {
-            Vector3 raycastOrigin = wheelTransforms[i].position;
-            if (Physics.Raycast(raycastOrigin, Vector3.down, kartApex.kartData.groundCheckDistance * 2f, layer))
-            {
-                Debug.Log($"Death layer detected via wheel {i} raycast");
-                return true;
-            }
-        }
-        
-        // Also check with a spherecast for more reliable detection
-        if (Physics.SphereCast(kartCenter, checkRadius, Vector3.down, out RaycastHit hit, kartApex.kartData.groundCheckDistance, layer))
-        {
-            Debug.Log("Death layer detected via spherecast");
-            return true;
-        }
-        
-        return false;
-    }
-
-    private void HandleChassisVisuals()
-    {
-        if (kartApex.chassisVisuals != null)
-        {
-            Quaternion targetTilt = Quaternion.Euler(0, steerInput * kartApex.kartData.maxChassisTiltAngle, 0);
-            kartApex.chassisVisuals.localRotation = Quaternion.Slerp(kartApex.chassisVisuals.localRotation, targetTilt, kartApex.kartData.tiltDampening * Time.fixedDeltaTime);
-        }
-        if (kartApex.kartVisualsRoot != null && currentState == KartState.Grounded)
-        {
-            float averageHitHeight = 0f;
-            if (groundHitCount > 0)
-            {
-                for (int i = 0; i < groundHitCount; i++)
-                {
-                    averageHitHeight += groundHits[i].point.y;
-                }
-                averageHitHeight /= groundHitCount;
-            }
-            Vector3 newLocalPos = new Vector3(0, (averageHitHeight - transform.position.y) + kartApex.kartData.groundContactOffset, 0);
-            if (Vector3.Distance(kartApex.kartVisualsRoot.localPosition, newLocalPos) > kartApex.kartData.yJitterThreshold)
-            {
-                kartApex.kartVisualsRoot.localPosition = Vector3.Lerp(kartApex.kartVisualsRoot.localPosition, newLocalPos, kartApex.kartData.tiltDampening * Time.fixedDeltaTime);
-            }
-        }
-    }
-
-    private void HandleWheelVisuals()
-    {
-        currentSteerAngle = steerInput * kartApex.kartData.maxSteerAngle;
-        kartApex.leftFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
-        kartApex.rightFrontWheel.localRotation = Quaternion.Euler(0, currentSteerAngle, 0);
-        float wheelSpeed = currentState == KartState.Grounded ? currentSpeed : kartApex.kartRigidbody.linearVelocity.magnitude;
-        float wheelRotationSpeed = wheelSpeed * 360f / (2f * Mathf.PI * kartApex.kartData.wheelRadius);
-        kartApex.leftFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
-        kartApex.rightFrontWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
-        kartApex.leftBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
-        kartApex.rightBackWheel.Rotate(wheelRotationSpeed * Time.fixedDeltaTime, 0, 0);
-    }
-
-    private void HandleRampJump()
-    {
-        if (stateChangeTimer < STATE_CHANGE_COOLDOWN) return; // Prevent rapid state changes
-        
-        // IMPROVED: Mario Kart Wii style graceful arc jump (NOT physics-based)
-        isJumping = true;
-        isPerformingArcJump = true;
-        arcJumpTimer = 0f;
-        
-        // Store start position and rotation
-        arcJumpStartPosition = transform.position;
-        arcJumpStartRotation = transform.rotation;
-        
-        // Calculate target landing position
-        Vector3 jumpDirection = transform.forward;
-        arcJumpTargetPosition = arcJumpStartPosition + jumpDirection * kartApex.kartGameSettings.jumpArcDistance;
-        
-        // Calculate peak position (midpoint of arc)
-        Vector3 midPoint = Vector3.Lerp(arcJumpStartPosition, arcJumpTargetPosition, 0.5f);
-        arcJumpPeakPosition = midPoint + Vector3.up * kartApex.kartGameSettings.jumpArcHeight;
-        
-        // Calculate target rotation (maintain forward direction)
-        arcJumpTargetRotation = Quaternion.LookRotation(jumpDirection, Vector3.up);
-        
-        // Set rigidbody to kinematic for controlled movement
-        kartApex.kartRigidbody.isKinematic = true;
-        kartApex.kartRigidbody.useGravity = false;
-        
-        // Reset timers and set state
-        airborneTimer = 0f;
-        // Set state based on whether trick was performed
-        currentState = isPerformingTrick ? KartState.PerformingTrick : KartState.Jumping;
-        stateChangeTimer = 0f;
-        
-        Debug.Log("Mario Kart Wii style arc jump started - graceful and smooth!");
-    }
-
-    // IMPROVED: Handle the graceful arc jump movement like Mario Kart Wii
-    private void HandleArcJump()
-    {
-        arcJumpTimer += Time.fixedDeltaTime;
-        float normalizedTime = arcJumpTimer / kartApex.kartGameSettings.jumpArcDuration;
-        
-        if (normalizedTime >= 1f)
-        {
-            // IMPROVED: Check for ground/slope at landing position
-            Vector3 finalLandingPos = arcJumpTargetPosition;
-            if (Physics.Raycast(arcJumpTargetPosition + Vector3.up * 2f, Vector3.down, out RaycastHit landingHit, 5f, kartApex.kartData.groundLayer))
-            {
-                // Adapt landing to actual ground surface (including slopes)
-                finalLandingPos = landingHit.point + landingHit.normal * kartApex.kartData.groundContactOffset;
-                arcJumpTargetRotation = Quaternion.LookRotation(transform.forward, landingHit.normal);
-            }
-            
-            // Jump complete - land gracefully on slope-adapted position
-            isPerformingArcJump = false;
-            transform.position = finalLandingPos;
-            transform.rotation = arcJumpTargetRotation;
-            
-            // Restore physics for landing
-            kartApex.kartRigidbody.isKinematic = false;
-            kartApex.kartRigidbody.useGravity = true;
-            kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
-            
-            currentState = KartState.Airborne; // Let normal landing logic take over
-            return;
-        }
-        
-        // Apply the jump arc curve for smooth motion
-        float curveValue = kartApex.kartGameSettings.jumpArcCurve.Evaluate(normalizedTime);
-        
-        // Calculate position along the arc using quadratic bezier curve
-        Vector3 currentPos = CalculateQuadraticBezierPoint(normalizedTime, arcJumpStartPosition, arcJumpPeakPosition, arcJumpTargetPosition);
-        
-        // IMPROVED: Check for wall collisions during arc jump
-        Vector3 movementDirection = (currentPos - transform.position).normalized;
-        float movementDistance = Vector3.Distance(currentPos, transform.position);
-        
-        if (Physics.Raycast(transform.position, movementDirection, out RaycastHit wallHit, movementDistance + 0.5f, kartApex.kartData.groundLayer))
-        {
-            float wallAngle = Vector3.Angle(wallHit.normal, Vector3.up);
-            if (wallAngle > kartApex.kartGameSettings.wallAngleThreshold)
-            {
-                // Hit a wall during arc jump - end arc early and bounce
-                isPerformingArcJump = false;
-                transform.position = wallHit.point + wallHit.normal * kartApex.kartGameSettings.bounceSafeDistance;
-                
-                // Calculate bounce direction
-                Vector3 bounceDirection = Vector3.Reflect(movementDirection, wallHit.normal);
-                arcJumpTargetRotation = Quaternion.LookRotation(bounceDirection, Vector3.up);
-                transform.rotation = arcJumpTargetRotation;
-                
-                // Restore physics and apply bounce
-                kartApex.kartRigidbody.isKinematic = false;
-                kartApex.kartRigidbody.useGravity = true;
-                kartApex.kartRigidbody.linearVelocity = bounceDirection * currentSpeed * 0.5f; // Reduced speed from collision
-                
-                currentState = KartState.Airborne;
-                onWallCollision.Invoke();
-                Debug.Log("Wall collision during arc jump - bounced!");
-                return;
-            }
-        }
-        
-        transform.position = currentPos;
-        
-        // Smoothly rotate during the jump
-        transform.rotation = Quaternion.Slerp(arcJumpStartRotation, arcJumpTargetRotation, curveValue);
-        
-        // IMPROVED: Allow airborne steering during arc jump
-        if (Mathf.Abs(steerInput) > kartApex.kartGameSettings.inputDeadzone)
-        {
-            float airborneControlStrength = kartApex.kartGameSettings.airborneControlStrength * 0.5f; // Reduced during arc
-            float airborneSteer = steerInput * airborneControlStrength * kartApex.kartData.turnSpeed * Time.fixedDeltaTime;
-            transform.Rotate(0, airborneSteer, 0);
-            
-            // Update target rotation to maintain new direction
-            arcJumpTargetRotation *= Quaternion.Euler(0, airborneSteer, 0);
-        }
-    }
-    
-    // Helper method for smooth arc calculation
-    private Vector3 CalculateQuadraticBezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2)
-    {
-        float u = 1 - t;
-        float tt = t * t;
-        float uu = u * u;
-        
-        Vector3 point = uu * p0; // (1-t)^2 * P0
-        point += 2 * u * t * p1; // 2(1-t)t * P1
-        point += tt * p2; // t^2 * P2
-        
-        return point;
-    }
 
     public void StartShortBoost(){
         kartShortBoosted = true;
@@ -631,45 +308,5 @@ public partial class KartInput
     public void StartLongBoost(){
         kartLongBoosted = true;
         boostTimer = 0f;
-    }
-    
-    // IMPROVED: Mario Kart Wii Tailwind System Framework
-    private void HandleTailwind()
-    {
-        // TODO: Implement proper tailwind detection when we have:
-        // - Other kart detection system
-        // - Distance/proximity calculations
-        // - Slipstream area detection
-        
-        // Framework for tailwind conditions:
-        bool isBehindKart = false; // TODO: Check if behind another kart
-        bool inSlipstreamRange = false; // TODO: Check distance and angle
-        bool speedRequirementMet = currentSpeed > kartApex.kartData.maxSpeed * 0.7f;
-        
-        if (isBehindKart && inSlipstreamRange && speedRequirementMet && isAccelerating)
-        {
-            tailwindTimer += Time.fixedDeltaTime;
-            
-            if (tailwindTimer >= kartApex.kartGameSettings.tailwindTimeToBoost)
-            {
-                // Apply tailwind boost
-                currentSpeed *= kartApex.kartGameSettings.tailwindBoostMultiplier;
-                tailwindTimer = 0f;
-                onTailwindBoost.Invoke();
-                Debug.Log("Tailwind boost applied!");
-            }
-            else if (tailwindTimer > 0.1f)
-            {
-                onTailwind.Invoke();
-            }
-        }
-        else
-        {
-            // Reset tailwind timer if conditions not met
-            if (tailwindTimer > 0f)
-            {
-                tailwindTimer = Mathf.Max(0f, tailwindTimer - Time.fixedDeltaTime * 2f);
-            }
-        }
     }
 }
