@@ -48,45 +48,40 @@ public partial class KartInput
     public void OnDrift(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
-        if (currentState == KartState.Grounded && isAccelerating && steerInput != 0 && !isDrifting)
-        {
-            isDrifting = true;
-            driftTimer = 0f;
-            onDrift.Invoke();
-        }
         
+        // SIMPLE: Only start drift when button is pressed and not already drifting
+        if (context.performed && !isDrifting)
+        {
+            // Check basic conditions
+            if (currentState == KartState.Grounded && isAccelerating && Mathf.Abs(steerInput) > 0f)
+            {
+                isDrifting = true;
+                driftTimer = 0f;
+                onDrift.Invoke();
+                Debug.Log("DRIFT STARTED - Manual");
+            }
+            else
+            {
+                Debug.Log($"DRIFT FAILED - grounded:{currentState == KartState.Grounded} accel:{isAccelerating} steer:{Mathf.Abs(steerInput) > 0f}");
+            }
+        }
     }
     public void OnDriftCanceled(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
-        if (isDrifting)
+        
+        // IMPROVED: End drift when button is released, but only once per release
+        if (context.canceled && isDrifting)
         {
-            isDrifting = false;
-            float driftDuration = driftTimer;
-            driftTimer = 0f;
-            if (driftDuration >= kartApex.kartGameSettings.driftTimeToOrangeBoost && !kartApex.autoDrift)
-            {
-                Debug.Log("Orange drift boost");
-                onDriftOrangeBoost.Invoke();
-            }
-            else if (driftDuration >= kartApex.kartGameSettings.driftTimeToBlueBoost && !kartApex.autoDrift)
-            {
-                Debug.Log("Blue drift boost");
-                onDriftBlueBoost.Invoke();
-            }
+            EndDrift("button released");
+            Debug.Log("DRIFT ENDED - Button released");
         }
     }
     private void OnAcceleratedCanceled(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
         isAccelerating = false;
-        if (isDrifting)
-        {
-            kartApex.BL_particleSystem.SetActive(false);
-            kartApex.BR_particleSystem.SetActive(false);
-            isDrifting = false;
-            driftTimer = 0f;
-        }
+        // FIXED: Don't stop drift here - let OnDriftCanceled handle it
         onDecelerate.Invoke();
     }
     public void OnAccelerate(InputAction.CallbackContext context)
@@ -98,6 +93,7 @@ public partial class KartInput
     private void OnTrick(InputAction.CallbackContext context)
     {
         if (kartApex.frozen) return;
+        
         if (isOnRamp && currentState == KartState.Grounded)
         {
             trickPerformedOnRamp = true;
@@ -105,6 +101,10 @@ public partial class KartInput
             currentState = KartState.PerformingTrick;
             onTrick.Invoke();
             Debug.Log("Trick performed on ramp takeoff!");
+        }
+        else
+        {
+            Debug.Log("Trick input ignored - not on ramp (kart doesn't wheelie)");
         }
     }
 

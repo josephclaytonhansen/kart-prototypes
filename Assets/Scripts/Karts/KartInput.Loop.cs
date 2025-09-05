@@ -51,7 +51,7 @@ public partial class KartInput
         }
         
         // Update timers
-        stateChangeTimer += Time.fixedDeltaTime;
+        // MKW: Immediate state transitions - no cooldown needed for arcade-style responsiveness
         if (terrainChangeSmoothing > 0f)
         {
             terrainChangeSmoothing = Mathf.Max(0f, terrainChangeSmoothing - Time.fixedDeltaTime);
@@ -80,22 +80,32 @@ public partial class KartInput
             }
             
             // If the kart just became grounded and it's NOT a death zone, store a safe respawn position.
-            if (!wasGrounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN && !CheckGroundOnLayer(kartApex.deathLayer))
+            if (!wasGrounded && !CheckGroundOnLayer(kartApex.deathLayer))
             {
-                // Start with the current position.
-                lastGroundedPosition = transform.position;
-
-                Vector3 backwardsDirection = -transform.forward;
-                // Subtract a small offset to ensure we don't collide with the ground immediately.
-                lastGroundedPosition = lastGroundedPosition - (backwardsDirection * Mathf.Max(currentSpeed, 1f));
-                // add a small y offset so it's slightly off the ground
-                lastGroundedPosition.y += 1f;
+                // IMPROVED: Better respawn position calculation with ground validation
+                Vector3 potentialRespawnPos = transform.position;
                 
-                Debug.Log("Updated safe respawn position: " + lastGroundedPosition);
-                stateChangeTimer = 0f;
+                // Ensure the respawn position is actually on solid ground
+                if (Physics.Raycast(potentialRespawnPos + Vector3.up * 2f, Vector3.down, out RaycastHit respawnHit, 5f, kartApex.kartData.groundLayer))
+                {
+                    // Use the actual ground position plus proper offset
+                    lastGroundedPosition = respawnHit.point + Vector3.up * kartApex.kartData.groundContactOffset;
+                    
+                    // Move it back slightly in the opposite of movement direction for safety
+                    Vector3 safetyOffset = -transform.forward * Mathf.Max(currentSpeed * 0.1f, 1f);
+                    lastGroundedPosition += safetyOffset;
+                    
+                    Debug.Log($"Updated safe respawn position: {lastGroundedPosition} (ground-validated)");
+                }
+                else
+                {
+                    // Fallback: use current position with higher offset
+                    lastGroundedPosition = potentialRespawnPos + Vector3.up * 2f;
+                    Debug.Log($"Updated respawn position (fallback): {lastGroundedPosition}");
+                }
             }
             
-            if (currentState != KartState.Grounded && stateChangeTimer >= STATE_CHANGE_COOLDOWN && !isPerformingArcJump)
+            if (currentState != KartState.Grounded && !isPerformingArcJump)
             {
                 currentState = KartState.Grounded;
                 if (airborneTimer > kartApex.kartGameSettings.hopGracePeriod)
@@ -111,17 +121,14 @@ public partial class KartInput
                         Debug.Log("Trick landing boost applied!");
                     }
                 }
-                stateChangeTimer = 0f;
             }
             HandleGroundedMovement();
         }
         else // Kart is not on the ground
         {
-            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick && 
-                stateChangeTimer >= STATE_CHANGE_COOLDOWN && !isPerformingArcJump)
+            if (currentState != KartState.Jumping && currentState != KartState.PerformingTrick && !isPerformingArcJump)
             {
                 currentState = KartState.Airborne;
-                stateChangeTimer = 0f;
             }
             HandleAirborneMovement();
         }

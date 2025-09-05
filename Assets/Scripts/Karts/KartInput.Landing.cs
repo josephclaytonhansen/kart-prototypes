@@ -53,7 +53,18 @@ private void CheckForLandingAssist()
         }
         
         targetPosition = landingAssistHit.point + landingAssistHit.normal * finalOffset;
-        targetRotation = Quaternion.FromToRotation(transform.up, landingAssistHit.normal) * transform.rotation;
+        
+        // IMPROVED: Better landing orientation - blend ground normal with upright preference
+        Vector3 landingUp = landingAssistHit.normal;
+        Vector3 uprightBlendedUp = Vector3.Slerp(landingUp, Vector3.up, 0.5f).normalized; // 50% upright bias
+        Vector3 correctedForward = Vector3.ProjectOnPlane(transform.forward, uprightBlendedUp).normalized;
+        
+        if (correctedForward.magnitude < 0.1f)
+        {
+            correctedForward = Vector3.ProjectOnPlane(Vector3.forward, uprightBlendedUp).normalized;
+        }
+        
+        targetRotation = Quaternion.LookRotation(correctedForward, uprightBlendedUp);
         currentSpeed = kartApex.kartRigidbody.linearVelocity.magnitude;
         transitionTimer = 0;
     }

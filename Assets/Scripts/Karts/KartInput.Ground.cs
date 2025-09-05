@@ -8,16 +8,33 @@ public partial class KartInput
         groundHitCount = 0;
         Vector3 tempAveragedNormal = Vector3.zero;
 
+        // IMPROVED: Mario Kart style ground detection - always cast from kart center regardless of orientation
+        Vector3 kartCenter = transform.position;
+        
+        // Primary ground check from kart center (most reliable)
+        if (Physics.Raycast(kartCenter, Vector3.down, out RaycastHit centerHit, kartApex.kartData.groundCheckDistance * 1.5f, kartApex.kartData.groundLayer))
+        {
+            groundHits[groundHitCount] = centerHit;
+            tempAveragedNormal += centerHit.normal;
+            groundHitCount++;
+        }
+
+        // Secondary checks from wheel positions (for slope detection)
         for (int i = 0; i < wheelTransforms.Length; i++)
         {
-            // Use a consistent downward direction for ground checking regardless of kart orientation
-            Vector3 raycastOrigin = wheelTransforms[i].position - transform.up * kartApex.kartData.groundContactOffset;
-            Vector3 raycastDirection = Vector3.down; // Always cast straight down in world space
+            // Always cast straight down in world space, regardless of kart orientation
+            Vector3 raycastOrigin = wheelTransforms[i].position;
+            Vector3 raycastDirection = Vector3.down;
 
-            if (Physics.Raycast(raycastOrigin, raycastDirection, out groundHits[groundHitCount], kartApex.kartData.groundCheckDistance, kartApex.kartData.groundLayer))
+            if (Physics.Raycast(raycastOrigin, raycastDirection, out RaycastHit wheelHit, kartApex.kartData.groundCheckDistance, kartApex.kartData.groundLayer))
             {
-                tempAveragedNormal += groundHits[groundHitCount].normal;
-                groundHitCount++;
+                // Only add if we haven't exceeded our hit array size
+                if (groundHitCount < groundHits.Length)
+                {
+                    groundHits[groundHitCount] = wheelHit;
+                    tempAveragedNormal += wheelHit.normal;
+                    groundHitCount++;
+                }
             }
         }
 

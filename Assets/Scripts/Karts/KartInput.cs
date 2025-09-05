@@ -70,6 +70,7 @@ public partial class KartInput : MonoBehaviour
     protected bool wasGrounded = false;
     protected bool isDrifting = false;
     protected float driftTimer = 0f;
+    protected float lastDriftEndTime = 0f; // IMPROVED: Prevent multiple drift ends
     protected bool isAccelerating = false;
     protected float airborneTimer = 0f;
     protected Vector3 targetPosition;
@@ -97,8 +98,7 @@ public partial class KartInput : MonoBehaviour
     protected Vector3 lastGroundedPosition;
     
     protected float terrainChangeSmoothing = 0f;
-    protected float stateChangeTimer = 0f;
-    protected const float STATE_CHANGE_COOLDOWN = 0.1f;
+    // REMOVED: stateChangeTimer and STATE_CHANGE_COOLDOWN - MKW uses immediate state transitions
     protected const float TERRAIN_CHANGE_SMOOTHING_DURATION = 0.2f;
 
     [Header("Events")]

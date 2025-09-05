@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KartGameSettings
   slopeInfluence: 0.5
   minKartWeight: 50
-  driftTimeToBlueBoost: 1.3
-  driftTimeToOrangeBoost: 2.4
+  driftTimeToBlueBoost: 1
+  driftTimeToOrangeBoost: 2
   shortBoostDuration: 0.5
   longBoostDuration: 1
+  boostAcceleration: 100
   tailwindTimeToBoost: 3
   tailwindBoostMultiplier: 1.3
   landingAssistLookahead: 0.5
@@ -31,7 +32,41 @@ MonoBehaviour:
   glancingBounceFactor: 0.2
   glancingSpeedLoss: 0.2
   bounceSafeDistance: 0.2
+  glancingClearanceDistance: 0.8
   jumpForce: 15
   hopGracePeriod: 0.15
   visualHopIntensity: 0.05
   jumpRayLength: 2
+  jumpArcDuration: 1.2
+  jumpArcHeight: 8
+  jumpArcDistance: 15
+  jumpArcCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  inputDeadzone: 0.15
+  airborneControlStrength: 0.5
+  trickMinAirborneTime: 0.2
+  groundRayOriginOffset: 0.05
+  blueBoostColor: {r: 0, g: 0.7, b: 1, a: 1}
+  orangeBoostColor: {r: 1, g: 0.7, b: 0, a: 1}

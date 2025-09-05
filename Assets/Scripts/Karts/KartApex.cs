@@ -51,9 +51,21 @@ public class KartApex : MonoBehaviour{
 
     public void RecoverFromDeath(Vector3 lastPosition)
     {
+        // IMPROVED: Ensure upright orientation on respawn
         kartRigidbody.position = lastPosition;
         kartRigidbody.linearVelocity = Vector3.zero;
         kartRigidbody.angularVelocity = Vector3.zero;
+        
+        // Force upright orientation to prevent spawning sideways/upside down
+        Vector3 currentForward = transform.forward;
+        Vector3 correctedForward = Vector3.ProjectOnPlane(currentForward, Vector3.up).normalized;
+        if (correctedForward.magnitude < 0.1f)
+        {
+            correctedForward = Vector3.forward; // Fallback direction
+        }
+        transform.rotation = Quaternion.LookRotation(correctedForward, Vector3.up);
+        
         frozen = false;
+        Debug.Log($"Recovered from death at {lastPosition} with upright orientation");
     }
 }

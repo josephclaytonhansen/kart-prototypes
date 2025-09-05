@@ -5,7 +5,7 @@ public partial class KartInput
 {
     private void HandleRampJump()
     {
-        if (stateChangeTimer < STATE_CHANGE_COOLDOWN) return; // Prevent rapid state changes
+        // IMPROVED: Mario Kart-style immediate responsiveness - no artificial delays
         
         // IMPROVED: Mario Kart Wii style graceful arc jump (NOT physics-based)
         isJumping = true;
@@ -35,7 +35,6 @@ public partial class KartInput
         airborneTimer = 0f;
         // Set state based on whether trick was performed
         currentState = isPerformingTrick ? KartState.PerformingTrick : KartState.Jumping;
-        stateChangeTimer = 0f;
         
         Debug.Log("Mario Kart Wii style arc jump started - graceful and smooth!");
     }
@@ -57,17 +56,15 @@ public partial class KartInput
                 arcJumpTargetRotation = Quaternion.LookRotation(transform.forward, landingHit.normal);
             }
             
-            // Jump complete - land gracefully on slope-adapted position
+            // MARIO KART WII STYLE: Arc jump is COMPLETELY controlled - no gravity handoff
+            // Land directly to grounded state with smooth positioning
             isPerformingArcJump = false;
             transform.position = finalLandingPos;
             transform.rotation = arcJumpTargetRotation;
             
-            // Restore physics for landing
-            kartApex.kartRigidbody.isKinematic = false;
-            kartApex.kartRigidbody.useGravity = true;
-            kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
-            
-            currentState = KartState.Airborne; // Let normal landing logic take over
+            // Stay kinematic and transition directly to grounded
+            currentState = KartState.Grounded;
+            Debug.Log("Arc jump completed - landed directly to grounded state");
             return;
         }
         

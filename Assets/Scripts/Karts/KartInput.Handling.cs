@@ -26,24 +26,42 @@ public partial class KartInput
         HandleSteering();
         HandleDriving();
         HandleAlignment();
+        
+        // IMPROVED: Prevent extreme tilting even when grounded (Mario Kart style stability)
+        CheckGroundedStability();
     }
 
     private void HandleAirborneMovement()
     {
         airborneTimer += Time.fixedDeltaTime;
         
+        // MARIO KART WII STYLE: Arc jumps are completely self-contained
         if (isPerformingArcJump)
         {
             HandleArcJump();
             return;
         }
         
+        // MARIO KART WII STYLE: Natural airborne (edges/bumps) uses gravity
         if (kartApex.kartRigidbody.isKinematic)
         {
+            // Switch to physics for natural falling (driving off edges, bumps)
+            Vector3 correctedForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            if (correctedForward.magnitude > 0.1f)
+            {
+                transform.rotation = Quaternion.LookRotation(correctedForward, Vector3.up);
+            }
+            
             kartApex.kartRigidbody.isKinematic = false;
             kartApex.kartRigidbody.useGravity = true;
             kartApex.kartRigidbody.linearVelocity = transform.forward * currentSpeed;
+            kartApex.kartRigidbody.angularVelocity = Vector3.zero;
+            
+            Debug.Log("Natural airborne - switched to gravity physics");
         }
+        
+        // MARIO KART WII STYLE: Gradual upright correction during natural fall
+        HandleAirborneOrientation();
         
         if (Mathf.Abs(steerInput) > kartApex.kartGameSettings.inputDeadzone)
         {
@@ -125,6 +143,7 @@ public partial class KartInput
                     currentAcceleration = kartApex.kartData.acceleration;
                     kartApex.BL_particleSystem.SetActive(false);
                     kartApex.BR_particleSystem.SetActive(false);
+                    Debug.Log("LONG BOOST ENDED!");
                 }
             }
             else if (kartShortBoosted)
@@ -140,6 +159,7 @@ public partial class KartInput
                     currentAcceleration = kartApex.kartData.acceleration;
                     kartApex.BR_particleSystem.SetActive(false);
                     kartApex.BL_particleSystem.SetActive(false);
+                    Debug.Log("SHORT BOOST ENDED!");
                 }
             }
             else
@@ -267,8 +287,36 @@ public partial class KartInput
 
     private void HandleAlignment()
     {
-        Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, averagedNormal);
-        targetRotation = Quaternion.LookRotation(forwardOnGround, averagedNormal);
+        // IMPROVED: Mario Kart style orientation - always try to stay upright
+        Vector3 desiredUp = averagedNormal;
+        Vector3 currentUp = transform.up;
+        
+        // Prevent extreme tilting during drift (arcade-style stability)
+        if (isDrifting)
+        {
+            // Allow some banking during drift but prevent flipping
+            float maxDriftTilt = 25f; // degrees
+            Vector3 projectedUp = Vector3.ProjectOnPlane(currentUp, transform.forward).normalized;
+            float currentTilt = Vector3.Angle(projectedUp, Vector3.up);
+            
+            if (currentTilt > maxDriftTilt)
+            {
+                // Correct excessive tilt back toward upright
+                Vector3 correctedUp = Vector3.Slerp(currentUp, Vector3.up, Time.fixedDeltaTime * 3f);
+                desiredUp = Vector3.Slerp(desiredUp, correctedUp, 0.7f);
+            }
+        }
+        
+        // FIXED: Calculate forward direction from targetRotation (which includes steering)
+        Vector3 forwardOnGround = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, desiredUp).normalized;
+        if (forwardOnGround.magnitude < 0.1f)
+        {
+            // Fallback if forward is too close to up vector
+            forwardOnGround = Vector3.ProjectOnPlane(transform.forward, desiredUp).normalized;
+        }
+        
+        // FIXED: Preserve steering by using targetRotation's forward direction
+        targetRotation = Quaternion.LookRotation(forwardOnGround, desiredUp);
         
         if (groundHitCount > 0)
         {
@@ -299,14 +347,46 @@ public partial class KartInput
             targetPosition = newTargetPos;
         }
     }
-
-    public void StartShortBoost(){
-        kartShortBoosted = true;
-        boostTimer = 0f;
+    
+    // MARIO KART WII STYLE: Gradual orientation correction during airborne (works with gravity)
+    private void HandleAirborneOrientation()
+    {
+        Vector3 currentUp = transform.up;
+        if (Vector3.Dot(currentUp, Vector3.up) < 0.8f) // If significantly tilted
+        {
+            Vector3 correctedForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            if (correctedForward.magnitude > 0.1f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(correctedForward, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 2f);
+            }
+        }
     }
-
-    public void StartLongBoost(){
-        kartLongBoosted = true;
-        boostTimer = 0f;
+    
+    // IMPROVED: Prevent kart from flipping over when grounded (arcade stability)
+    private void CheckGroundedStability()
+    {
+        Vector3 currentUp = transform.up;
+        float upwardnessDot = Vector3.Dot(currentUp, Vector3.up);
+        
+        // If kart is getting close to flipping over (upside down)
+        if (upwardnessDot < 0.3f) // More than ~72 degrees from upright
+        {
+            Debug.Log("Kart stability critical - applying emergency upright correction!");
+            
+            // Force the kart back to an upright orientation
+            Vector3 correctedForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            if (correctedForward.magnitude < 0.1f)
+            {
+                correctedForward = Vector3.ProjectOnPlane(targetRotation * Vector3.forward, Vector3.up).normalized;
+            }
+            
+            // Gradually correct to upright position
+            Quaternion emergencyUpright = Quaternion.LookRotation(correctedForward, Vector3.up);
+            targetRotation = Quaternion.Slerp(targetRotation, emergencyUpright, Time.fixedDeltaTime * 5f);
+            
+            // Also boost the position slightly to clear any ground penetration
+            targetPosition += Vector3.up * 0.2f;
+        }
     }
 }

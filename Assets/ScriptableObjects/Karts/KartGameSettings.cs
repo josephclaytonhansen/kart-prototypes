@@ -29,15 +29,15 @@ public class KartGameSettings : ScriptableObject
     public float landingHeightOffset = 0.1f;
 
     [Header("Collision Settings")]
-    [Tooltip("Distance ahead to check for collisions based on current speed")]
-    public float collisionLookahead = 0.1f;
+    [Tooltip("IMPROVED: Distance ahead to check for collisions based on current speed (reduced to prevent over-sensitive detection)")]
+    public float collisionLookahead = 0.2f;
     [Tooltip("Angle threshold to determine if surface is a wall (degrees)")]
     public float wallAngleThreshold = 45f;
     [Tooltip("The width of the predictive raycast sweep to detect glancing blows.")]
     public float predictiveRaycastWidth = 0.5f;
 
-    [Tooltip("The speed to bounce backward at for a head-on collision.")]
-    public float headOnBounceSpeed = 2.0f;
+    [Tooltip("IMPROVED: The speed to bounce backward at for a head-on collision (increased for better control).")]
+    public float headOnBounceSpeed = 4.0f;
 
     [Tooltip("The strength of the bounce away from the wall during a glancing collision.")]
     public float glancingBounceFactor = 0.2f;
@@ -45,8 +45,11 @@ public class KartGameSettings : ScriptableObject
     [Tooltip("The speed reduction factor for a glancing collision (0.0 to 1.0).")]
     public float glancingSpeedLoss = 0.2f;
 
-    [Tooltip("The distance to start the bounce transition from the wall.")]
-    public float bounceSafeDistance = 0.2f;
+    [Tooltip("IMPROVED: The distance to start the bounce transition from the wall (increased to prevent sticking).")]
+    public float bounceSafeDistance = 1.5f;
+
+    [Tooltip("IMPROVED: Minimum clearance distance for glancing collisions to prevent wall grinding penetration (reduced to be less aggressive).")]
+    public float glancingClearanceDistance = 0.3f;
 
     [Header("Jump and Fall Settings")]
     [Tooltip("Controls the upward force of a player-initiated jump.")]
